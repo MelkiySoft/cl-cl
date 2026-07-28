@@ -1,5 +1,5 @@
 CREATE TABLE "accounts" (
-	"user_id" integer NOT NULL,
+	"user_id" text NOT NULL,
 	"type" text NOT NULL,
 	"provider" text NOT NULL,
 	"provider_account_id" text NOT NULL,
@@ -15,12 +15,12 @@ CREATE TABLE "accounts" (
 --> statement-breakpoint
 CREATE TABLE "sessions" (
 	"session_token" text PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+	"user_id" text NOT NULL,
 	"expires" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
 	"email" text NOT NULL,
 	"email_verified" timestamp,

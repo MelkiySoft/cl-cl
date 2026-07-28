@@ -2,6 +2,9 @@
 
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
+
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { signIn } from "@/lib/auth";
@@ -41,21 +44,21 @@ export async function register(
         name,
         email,
         password: hashedPassword,
-        role: "customer", // по умолчанию
+        role: "customer",
     });
 
-    // Сразу логиним после регистрации
-    try {
-        await signIn("credentials", {
-            email,
-            password,
-            redirectTo: "/",
-        });
-    } catch {
-        // signIn бросает NEXT_REDIRECT — это нормально
+    // Логиним без автоматического редиректа от signIn
+    const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+    });
+
+    if (result?.error) {
+        return { error: "Аккаунт создан, но войти не удалось. Попробуйте войти вручную." };
     }
 
-    return { success: true };
+    redirect("/");
 }
 
 export async function login(
@@ -70,15 +73,21 @@ export async function login(
     }
 
     try {
-        await signIn("credentials", {
+        const result = await signIn("credentials", {
             email,
             password,
-            redirectTo: "/",
+            redirect: false,
         });
+
+        if (result?.error) {
+            return { error: "Неверный email или пароль" };
+        }
     } catch (error) {
-        // Auth.js бросает ошибку при неверных данных
-        return { error: "Неверный email или пароль" };
+        if (error instanceof AuthError) {
+            return { error: "Неверный email или пароль" };
+        }
+        throw error;
     }
 
-    return { success: true };
+    redirect("/");
 }

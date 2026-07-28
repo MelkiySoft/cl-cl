@@ -59,6 +59,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     return null;
                 }
 
+                // Требуем подтверждённый email
+                if (!user.emailVerified) {
+                    return null;
+                }
+
                 return {
                     id: String(user.id),
                     email: user.email,

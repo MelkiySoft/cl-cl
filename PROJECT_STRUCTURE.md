@@ -2,10 +2,11 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-07-28T08:33:42.010Z
+> Последнее обновление: 2026-07-28T09:27:13.908Z
 
 ```bash
 ├── actions/
+│   └── auth.ts
 ├── app/
 │   ├── (auth)/
 │   │   ├── login/
@@ -58,10 +59,8 @@
 ├── drizzle/
 │   ├── meta/
 │   │   ├── _journal.json
-│   │   ├── 0000_snapshot.json
-│   │   └── 0001_snapshot.json
-│   ├── 0000_kind_true_believers.sql
-│   └── 0001_safe_nocturne.sql
+│   │   └── 0000_snapshot.json
+│   └── 0000_ordinary_kitty_pryde.sql
 ├── hooks/
 ├── lib/
 │   ├── auth.ts

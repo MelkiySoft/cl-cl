@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-07-27T13:59:26.543Z
+> Последнее обновление: 2026-07-28T08:33:42.010Z
 
 ```bash
 ├── actions/
@@ -10,8 +10,9 @@
 │   ├── (auth)/
 │   │   ├── login/
 │   │   │   └── page.tsx
-│   │   └── register/
-│   │       └── page.tsx
+│   │   ├── register/
+│   │   │   └── page.tsx
+│   │   └── layout.tsx
 │   ├── (dashboard)/
 │   │   ├── admin/
 │   │   │   └── page.tsx
@@ -57,10 +58,13 @@
 ├── drizzle/
 │   ├── meta/
 │   │   ├── _journal.json
-│   │   └── 0000_snapshot.json
-│   └── 0000_silly_bedlam.sql
+│   │   ├── 0000_snapshot.json
+│   │   └── 0001_snapshot.json
+│   ├── 0000_kind_true_believers.sql
+│   └── 0001_safe_nocturne.sql
 ├── hooks/
 ├── lib/
+│   ├── auth.ts
 │   └── utils.ts
 ├── public/
 │   ├── file.svg
@@ -71,6 +75,7 @@
 ├── scripts/
 │   └── generate-structure.js
 ├── types/
+│   └── next-auth.d.ts
 ├── .env.example
 ├── .gitignore
 ├── components.json

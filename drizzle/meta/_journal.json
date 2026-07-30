@@ -8,6 +8,20 @@
       "when": 1785229608132,
       "tag": "0000_ordinary_kitty_pryde",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785331784269,
+      "tag": "0001_careless_the_twelve",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785399938318,
+      "tag": "0002_lean_the_enforcers",
+      "breakpoints": true
     }
   ]
 }

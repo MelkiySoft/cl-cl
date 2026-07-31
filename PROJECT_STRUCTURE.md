@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-07-30T09:12:54.512Z
+> Последнее обновление: 2026-07-30T13:39:26.271Z
 
 ```bash
 ├── actions/
@@ -63,10 +63,12 @@
 │   │   ├── _journal.json
 │   │   ├── 0000_snapshot.json
 │   │   ├── 0001_snapshot.json
-│   │   └── 0002_snapshot.json
+│   │   ├── 0002_snapshot.json
+│   │   └── 0003_snapshot.json
 │   ├── 0000_ordinary_kitty_pryde.sql
 │   ├── 0001_careless_the_twelve.sql
-│   └── 0002_lean_the_enforcers.sql
+│   ├── 0002_lean_the_enforcers.sql
+│   └── 0003_grey_firedrake.sql
 ├── hooks/
 ├── lib/
 │   ├── auth.ts

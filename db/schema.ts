@@ -6,6 +6,15 @@ import {
     serial,
     boolean,
     primaryKey,
+    pgEnum,
+    char,
+    smallint,
+    bigint,
+    bigserial,
+    numeric,
+    jsonb,
+    uniqueIndex,
+    index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import type { AdapterAccountType } from "next-auth/adapters";
@@ -292,3 +301,80 @@ export const companyToCategoryRelations = relations(companyToCategory, ({ one })
         references: [categories.id],
     }),
 }));
+
+// ============================================================
+// Geo USA (ZIP codes)
+// ============================================================
+
+export const zipTypeEnum = pgEnum("zip_type", [
+    "STANDARD",
+    "PO BOX",
+    "UNIQUE",
+    "MILITARY",
+]);
+
+export const geoUsa = pgTable("geo_usa",
+    {
+        id: bigserial("id", { mode: "number" }).primaryKey(),
+
+        zip: char("zip", { length: 5 }).notNull(),
+
+        city: text("city"),
+        cityAscii: text("city_ascii"),
+        alternateCities: text("alternate_cities"),
+        slug: text("slug"),
+
+        stateId: char("state_id", { length: 2 }), // CA, TX, NY...
+        stateName: text("state_name"),
+
+        countyFips: char("county_fips", { length: 5 }),
+        countyName: text("county_name"),
+
+        cityLat: numeric("city_lat", { precision: 10, scale: 6 }),
+        cityLng: numeric("city_lng", { precision: 10, scale: 6 }),
+
+        population: integer("population"),
+        density: numeric("density", { precision: 8, scale: 2 }),
+        ranking: smallint("ranking"),
+
+        incorporated: boolean("incorporated"),
+        military: boolean("military"),
+
+        timezone: text("timezone"),
+
+        sourceSimplemaps: boolean("source_simplemaps").notNull().default(false),
+
+        zipType: zipTypeEnum("zip_type"),
+
+        isActive: boolean("is_active").notNull().default(true),
+
+        areaCodes: jsonb("area_codes").$type<string[] | null>(),
+
+        primaryCity: text("primary_city"),
+        acceptableCities: jsonb("acceptable_cities").$type<string[] | null>(),
+        unacceptableCities: jsonb("unacceptable_cities").$type<string[] | null>(),
+
+        sourceSeanpianka: boolean("source_seanpianka").notNull().default(false),
+
+        zcta: char("zcta", { length: 5 }),
+        zctaLat: numeric("zcta_lat", { precision: 10, scale: 6 }),
+        zctaLng: numeric("zcta_lng", { precision: 10, scale: 6 }),
+
+        sourceCensus: boolean("source_census").notNull().default(false),
+
+        createdAt: timestamp("created_at").defaultNow().notNull(),
+        updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    },
+    (t) => [
+        uniqueIndex("uq_geo_usa_zip").on(t.zip),
+        index("idx_geo_usa_zip").on(t.zip),
+        index("idx_geo_usa_zcta").on(t.zcta),
+        index("idx_geo_usa_state").on(t.stateId),
+        index("idx_geo_usa_city").on(t.city),
+        index("idx_geo_usa_slug").on(t.slug),
+    ]
+);
+
+
+
+

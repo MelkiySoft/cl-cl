@@ -7,13 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "structure": "node scripts/generate-structure.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:drop": "drizzle-kit drop",
-    "structure": "node scripts/generate-structure.js",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "db:geo:load": "tsx scripts/geo/load-geo-usa.ts",
+    "db:geo:generate-slugs": "tsx scripts/geo/generate-slugs.ts",
+    "db:geo:export-to-xml": "tsx scripts/geo/export-to-xml.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",

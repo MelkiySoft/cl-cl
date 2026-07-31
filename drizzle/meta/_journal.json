@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1785229608132,
-      "tag": "0000_ordinary_kitty_pryde",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1785331784269,
-      "tag": "0001_careless_the_twelve",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1785399938318,
-      "tag": "0002_lean_the_enforcers",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1785404315315,
-      "tag": "0003_grey_firedrake",
+      "when": 1785487436647,
+      "tag": "0000_nappy_sprite",
       "breakpoints": true
     }
   ]

@@ -24,11 +24,7 @@ https://github.com/MelkiySoft/cl-cl/blob/main/PROJECT_STRUCTURE.md
 https://github.com/MelkiySoft/cl-cl/blob/main/db/schema.ts
 
 ## работа с geo
-# 1. Положить файлы в data/geo/
-#    uscities.csv
-#    zips.json
-#    tl_2025_us_zcta520.csv
-#    (имена/версии — в FILES внутри scripts/geo/load-geo-usa.ts)
-pnpm db:geo:load              # загрузка в БД
-pnpm db:geo:generate-slugs    # slug для городов
-pnpm db:geo:export-to-xml     # exports/geo_usa_full.xml
+1. Положить файлы uscities.csv, zips.json, tl_2025_us_zcta520.csv в data/geo/. Иимена/версии — в FILES внутри scripts/geo/load-geo-usa.ts
+2. pnpm db:geo:load              # загрузка в БД
+3. pnpm db:geo:generate-slugs    # slug для городов
+4. pnpm db:geo:export-to-xml     # exports/geo_usa_full.xml

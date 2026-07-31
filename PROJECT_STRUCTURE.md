@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-07-30T13:39:26.271Z
+> Последнее обновление: 2026-07-31T06:53:07.084Z
 
 ```bash
 ├── actions/
@@ -55,6 +55,11 @@
 │       ├── button.tsx
 │       └── card.tsx
 ├── config/
+├── data/
+│   └── geo/
+│       ├── tl_2025_us_zcta520.csv
+│       ├── uscities.csv
+│       └── zips.json
 ├── db/
 │   ├── index.ts
 │   └── schema.ts
@@ -69,6 +74,8 @@
 │   ├── 0001_careless_the_twelve.sql
 │   ├── 0002_lean_the_enforcers.sql
 │   └── 0003_grey_firedrake.sql
+├── exports/
+│   └── geo_usa_full.xml
 ├── hooks/
 ├── lib/
 │   ├── auth.ts
@@ -82,6 +89,10 @@
 │   ├── vercel.svg
 │   └── window.svg
 ├── scripts/
+│   ├── geo/
+│   │   ├── export-to-xml.ts
+│   │   ├── generate-slugs.ts
+│   │   └── load-geo-usa.ts
 │   ├── seed/
 │   │   ├── categories.ts
 │   │   ├── companies.ts

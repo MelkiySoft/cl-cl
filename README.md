@@ -14,13 +14,15 @@
 - Auth.js (NextAuth v5) — Credentials, JWT, роли
 - pnpm
 
-## Установленные ранее пакеты
+## Для ИИ
+
+Установленные ранее пакеты
 https://github.com/MelkiySoft/cl-cl/blob/main/package.json
 
-## Структура проекта
+Структура проекта
 https://github.com/MelkiySoft/cl-cl/blob/main/PROJECT_STRUCTURE.md
 
-## Структура таблиц (схема)
+Структура таблиц (схема)
 https://github.com/MelkiySoft/cl-cl/blob/main/db/schema.ts
 
 ## работа с geo

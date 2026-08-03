@@ -2,11 +2,12 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-07-31T06:53:07.084Z
+> Последнее обновление: 2026-08-03T12:10:51.192Z
 
 ```bash
 ├── actions/
-│   └── auth.ts
+│   ├── auth.ts
+│   └── upload.ts
 ├── app/
 │   ├── (auth)/
 │   │   ├── login/
@@ -66,19 +67,14 @@
 ├── drizzle/
 │   ├── meta/
 │   │   ├── _journal.json
-│   │   ├── 0000_snapshot.json
-│   │   ├── 0001_snapshot.json
-│   │   ├── 0002_snapshot.json
-│   │   └── 0003_snapshot.json
-│   ├── 0000_ordinary_kitty_pryde.sql
-│   ├── 0001_careless_the_twelve.sql
-│   ├── 0002_lean_the_enforcers.sql
-│   └── 0003_grey_firedrake.sql
+│   │   └── 0000_snapshot.json
+│   └── 0000_nappy_sprite.sql
 ├── exports/
 │   └── geo_usa_full.xml
 ├── hooks/
 ├── lib/
 │   ├── auth.ts
+│   ├── r2.ts
 │   └── utils.ts
 ├── logs/
 │   └── verification.log

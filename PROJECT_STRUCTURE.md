@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-03T12:10:51.192Z
+> Последнее обновление: 2026-08-03T13:26:08.120Z
 
 ```bash
 ├── actions/
@@ -79,6 +79,13 @@
 ├── logs/
 │   └── verification.log
 ├── public/
+│   ├── demo/
+│   │   ├── category.jpg
+│   │   ├── company.jpg
+│   │   ├── logo.jpg
+│   │   ├── sparkle-1.jpg
+│   │   ├── sparkle-2.jpg
+│   │   └── user.jpg
 │   ├── file.svg
 │   ├── globe.svg
 │   ├── next.svg

@@ -180,7 +180,7 @@ export function MobileNav({ categories }: MobileNavProps) {
                     </div>
                 </div>
             </SheetContent>
-            
+
         </Sheet>
     )
 }

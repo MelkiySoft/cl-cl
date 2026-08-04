@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-04T09:03:08.420Z
+> Последнее обновление: 2026-08-04T15:16:39.932Z
 
 ```bash
 ├── actions/
@@ -27,7 +27,7 @@
 │   │   └── layout.tsx
 │   ├── (public)/
 │   │   ├── catalog/
-│   │   │   └── [...path]/
+│   │   │   └── [[...path]]/
 │   │   │       └── page.tsx
 │   │   ├── company/
 │   │   │   └── [slug]/
@@ -50,6 +50,11 @@
 │   │   └── provider/
 │   ├── site/
 │   │   ├── catalog/
+│   │   │   ├── catalog-pagination.tsx
+│   │   │   ├── catalog-toolbar.tsx
+│   │   │   ├── category-sidebar.tsx
+│   │   │   ├── company-card.tsx
+│   │   │   └── company-grid.tsx
 │   │   ├── company/
 │   │   ├── forms/
 │   │   └── layout/

@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-03T13:26:08.120Z
+> Последнее обновление: 2026-08-04T06:41:48.248Z
 
 ```bash
 ├── actions/
@@ -32,15 +32,16 @@
 │   │   ├── company/
 │   │   │   └── [slug]/
 │   │   │       └── page.tsx
+│   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── api/
 │   │   └── auth/
 │   │       └── [...nextauth]/
 │   │           └── route.ts
+│   ├── 111page.tsx
 │   ├── favicon.ico
 │   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
+│   └── layout.tsx
 ├── components/
 │   ├── dashboard/
 │   │   ├── admin/
@@ -52,9 +53,22 @@
 │   │   ├── company/
 │   │   ├── forms/
 │   │   └── layout/
-│   └── ui/
-│       ├── button.tsx
-│       └── card.tsx
+│   │       ├── catalog-menu.tsx
+│   │       ├── footer.tsx
+│   │       ├── header.tsx
+│   │       ├── logo.tsx
+│   │       ├── mobile-nav.tsx
+│   │       ├── theme-toggle.tsx
+│   │       └── user-nav.tsx
+│   ├── ui/
+│   │   ├── avatar.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── separator.tsx
+│   │   └── sheet.tsx
+│   ├── providers.tsx
+│   └── theme-provider.tsx
 ├── config/
 ├── data/
 │   └── geo/

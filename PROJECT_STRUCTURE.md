@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-04T06:41:48.248Z
+> Последнее обновление: 2026-08-04T09:03:08.420Z
 
 ```bash
 ├── actions/
@@ -88,6 +88,7 @@
 ├── hooks/
 ├── lib/
 │   ├── auth.ts
+│   ├── categories.ts
 │   ├── r2.ts
 │   └── utils.ts
 ├── logs/
@@ -95,7 +96,9 @@
 ├── public/
 │   ├── demo/
 │   │   ├── category.jpg
-│   │   ├── company.jpg
+│   │   ├── company1.jpg
+│   │   ├── company2.jpg
+│   │   ├── company3.jpg
 │   │   ├── logo.jpg
 │   │   ├── sparkle-1.jpg
 │   │   ├── sparkle-2.jpg

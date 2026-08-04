@@ -16,6 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "./theme-toggle"
 import { cn } from "@/lib/utils"
+import type { MenuCategory } from "@/lib/categories"
 
 const NAV_LINKS = [
     { href: "/articles", label: "Articles" },
@@ -23,46 +24,61 @@ const NAV_LINKS = [
     { href: "/contact", label: "Contact" },
 ]
 
-const MOCK_CATEGORIES = [
-    { name: "Residential Cleaning", slug: "residential-cleaning" },
-    { name: "Commercial Cleaning", slug: "commercial-cleaning" },
-    { name: "Specialized Services", slug: "specialized-services" },
-]
+type MobileNavProps = {
+    categories: MenuCategory[]
+}
 
-export function MobileNav() {
+export function MobileNav({ categories }: MobileNavProps) {
     const [open, setOpen] = React.useState(false)
     const { data: session } = useSession()
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
-                render={<Button variant="ghost" size="icon" className="lg:hidden size-9" />}
+                render={
+                    <Button variant="ghost" size="icon" className="lg:hidden size-9" />
+                }
             >
                 <Menu className="size-5" />
                 <span className="sr-only">Open menu</span>
             </SheetTrigger>
 
-            <SheetContent side="right" className="w-full max-w-xs p-0">
-                <SheetHeader className="p-4 border-b">
+            <SheetContent
+                side="right"
+                className="w-full max-w-xs p-0 flex flex-col h-full"
+            >
+                <SheetHeader className="p-4 border-b shrink-0">
                     <SheetTitle className="text-left">Menu</SheetTitle>
                 </SheetHeader>
 
-                <div className="flex flex-col py-4">
+                {/* Скроллируемая часть */}
+                <div className="flex-1 overflow-y-auto overscroll-contain py-4">
                     {/* Catalog */}
                     <div className="px-4 pb-3">
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                             Catalog
                         </p>
                         <div className="space-y-1">
-                            {MOCK_CATEGORIES.map((cat) => (
-                                <Link
-                                    key={cat.slug}
-                                    href={`/catalog/${cat.slug}`}
-                                    onClick={() => setOpen(false)}
-                                    className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent transition-colors"
-                                >
-                                    {cat.name}
-                                </Link>
+                            {categories.map((cat) => (
+                                <div key={cat.id}>
+                                    <Link
+                                        href={`/catalog/${cat.slug}`}
+                                        onClick={() => setOpen(false)}
+                                        className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent transition-colors"
+                                    >
+                                        {cat.name}
+                                    </Link>
+                                    {cat.children.map((child) => (
+                                        <Link
+                                            key={child.id}
+                                            href={`/catalog/${cat.slug}/${child.slug}`}
+                                            onClick={() => setOpen(false)}
+                                            className="block rounded-md pl-6 pr-3 py-1.5 text-sm text-muted-foreground hover:bg-accent transition-colors"
+                                        >
+                                            {child.name}
+                                        </Link>
+                                    ))}
+                                </div>
                             ))}
                             <Link
                                 href="/catalog"
@@ -164,6 +180,7 @@ export function MobileNav() {
                     </div>
                 </div>
             </SheetContent>
+            
         </Sheet>
     )
 }

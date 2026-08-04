@@ -13,37 +13,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { MenuCategory } from "@/lib/categories"
 
-const MOCK_CATEGORIES = [
-    {
-        name: "Residential Cleaning",
-        slug: "residential-cleaning",
-        children: [
-            { name: "House Cleaning", slug: "house-cleaning" },
-            { name: "Deep Cleaning", slug: "deep-cleaning" },
-            { name: "Move-out / Move-in", slug: "move-out-in-cleaning" },
-        ],
-    },
-    {
-        name: "Commercial Cleaning",
-        slug: "commercial-cleaning",
-        children: [
-            { name: "Office Cleaning", slug: "office-cleaning" },
-            { name: "Retail Cleaning", slug: "retail-cleaning" },
-        ],
-    },
-    {
-        name: "Specialized Services",
-        slug: "specialized-services",
-        children: [
-            { name: "Carpet Cleaning", slug: "carpet-cleaning" },
-            { name: "Window Cleaning", slug: "window-cleaning" },
-            { name: "Post-Construction", slug: "post-construction" },
-        ],
-    },
-]
+type CatalogMenuProps = {
+    categories: MenuCategory[]
+}
 
-export function CatalogMenu() {
+export function CatalogMenu({ categories }: CatalogMenuProps) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger
@@ -58,21 +34,21 @@ export function CatalogMenu() {
                 <ChevronDown className="size-4 opacity-70" />
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="start" className="w-64">
+            <DropdownMenuContent align="start" className="w-72">
                 <DropdownMenuGroup>
                     <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
                         Categories
                     </DropdownMenuLabel>
 
-                    {MOCK_CATEGORIES.map((cat) => (
-                        <div key={cat.slug}>
+                    {categories.map((cat) => (
+                        <div key={cat.id}>
                             <DropdownMenuItem render={<Link href={`/catalog/${cat.slug}`} />}>
                                 {cat.name}
                             </DropdownMenuItem>
 
-                            {cat.children?.map((child) => (
+                            {cat.children.map((child) => (
                                 <DropdownMenuItem
-                                    key={child.slug}
+                                    key={child.id}
                                     render={<Link href={`/catalog/${cat.slug}/${child.slug}`} />}
                                     className="pl-6 text-muted-foreground"
                                 >

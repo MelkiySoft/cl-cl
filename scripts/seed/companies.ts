@@ -1,5 +1,5 @@
 import { eq, inArray } from "drizzle-orm"
-
+import { geoUsa } from "@/db/schema"
 import { db } from "@/db"
 import {
     users,
@@ -24,6 +24,12 @@ const IMAGES = [
     "/demo/company1.jpg",
     "/demo/company2.jpg",
     "/demo/company3.jpg",
+]
+
+const GALLERY_IMAGES = [
+    "/demo/gallery1.jpg",
+    "/demo/gallery2.jpg",
+    "/demo/gallery3.jpg",
 ]
 
 const CITIES = [
@@ -85,6 +91,28 @@ export async function seedCompanies() {
     const imageValues: { companyIndex: number; image: string }[] = []
     const categoryLinks: { companyIndex: number; categoryId: number }[] = []
 
+    // ZIP'ы, которые используем в CITIES
+    const zips = CITIES.map((c) => c.zip)
+    const geoRows = await db.query.geoUsa.findMany({
+        where: inArray(geoUsa.zip, zips),
+        columns: {
+            zip: true,
+            cityLat: true,
+            cityLng: true,
+            zctaLat: true,
+            zctaLng: true,
+        },
+    })
+    const geoByZip = new Map(
+        geoRows.map((g) => [
+            g.zip,
+            {
+                lat: String(g.cityLat ?? g.zctaLat ?? ""),
+                lng: String(g.cityLng ?? g.zctaLng ?? ""),
+            },
+        ])
+    )
+
     for (let i = 1; i <= FAKE_COMPANIES_COUNT; i++) {
         const providerEmail = PROVIDER_EMAILS[(i - 1) % PROVIDER_EMAILS.length]
         const provider = providerByEmail[providerEmail]
@@ -94,6 +122,7 @@ export async function seedCompanies() {
         const location = pick(CITIES)
         const image = pick(IMAGES)
         const num = String(i).padStart(3, "0")
+        const geo = geoByZip.get(location.zip)
 
         companyValues.push({
             userId: provider.id,
@@ -121,6 +150,8 @@ export async function seedCompanies() {
             state: location.state,
             zip: location.zip,
             country: "US",
+            latitude: geo?.lat || null,
+            longitude: geo?.lng || null,
             status: true,
             moderationStatus: "approved" as const,
             approvedAt: new Date(),
@@ -161,6 +192,28 @@ export async function seedCompanies() {
             }))
         )
         console.log(`  ✓ Inserted ${imageValues.length} company images`)
+    }
+
+    // --- company_images (3 gallery photo на каждую компанию) ---
+    const galleryRows: {
+        companyId: number
+        image: string
+        sortOrder: number
+    }[] = []
+
+    for (const company of inserted) {
+        GALLERY_IMAGES.forEach((image, index) => {
+            galleryRows.push({
+                companyId: company.id,
+                image,
+                sortOrder: index,
+            })
+        })
+    }
+
+    if (galleryRows.length > 0) {
+        await db.insert(companyImages).values(galleryRows)
+        console.log(`  ✓ Inserted ${galleryRows.length} gallery images`)
     }
 
     // --- company_to_category ---

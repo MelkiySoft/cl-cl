@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-04T15:16:39.932Z
+> Последнее обновление: 2026-08-04T18:18:05.944Z
 
 ```bash
 ├── actions/
@@ -56,6 +56,9 @@
 │   │   │   ├── company-card.tsx
 │   │   │   └── company-grid.tsx
 │   │   ├── company/
+│   │   │   ├── company-gallery.tsx
+│   │   │   ├── company-map-loader.tsx
+│   │   │   └── company-map.tsx
 │   │   ├── forms/
 │   │   └── layout/
 │   │       ├── catalog-menu.tsx
@@ -94,6 +97,7 @@
 ├── lib/
 │   ├── auth.ts
 │   ├── categories.ts
+│   ├── companies.ts
 │   ├── r2.ts
 │   └── utils.ts
 ├── logs/
@@ -104,6 +108,9 @@
 │   │   ├── company1.jpg
 │   │   ├── company2.jpg
 │   │   ├── company3.jpg
+│   │   ├── gallery1.jpg
+│   │   ├── gallery2.jpg
+│   │   ├── gallery3.jpg
 │   │   ├── logo.jpg
 │   │   ├── sparkle-1.jpg
 │   │   ├── sparkle-2.jpg

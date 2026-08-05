@@ -13,16 +13,16 @@ const FOOTER_LINKS = [
     {
         title: "Company",
         links: [
-            { href: "/about", label: "About" },
-            { href: "/articles", label: "Articles" },
-            { href: "/contact", label: "Contact" },
+            { href: "/article/about", label: "About" },
+            { href: "/blog", label: "Blog" },
+            { href: "/article/contact", label: "Contact" },
         ],
     },
     {
         title: "Legal",
         links: [
-            { href: "/privacy", label: "Privacy Policy" },
-            { href: "/terms", label: "Terms of Service" },
+            { href: "/article/privacy-policy", label: "Privacy Policy" },
+            { href: "/article/terms-of-service", label: "Terms of Service" },
         ],
     },
 ]

@@ -19,9 +19,9 @@ import { cn } from "@/lib/utils"
 import type { MenuCategory } from "@/lib/categories"
 
 const NAV_LINKS = [
-    { href: "/articles", label: "Articles" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
+    { href: "/blog", label: "Blog" },
+    { href: "/article/about", label: "About" },
+    { href: "/article/contact", label: "Contact" },
 ]
 
 type MobileNavProps = {

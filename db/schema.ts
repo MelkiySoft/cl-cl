@@ -376,5 +376,139 @@ export const geoUsa = pgTable("geo_usa",
 );
 
 
+// ============================================================
+// Blog Categories
+// ============================================================
+
+export const blogCategories = pgTable("blog_categories", {
+    id: serial("id").primaryKey(),
+
+    parentId: integer("parent_id"), // null = корень
+
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+
+    description: text("description"),
+
+    metaTitle: text("meta_title"),
+    metaDescription: text("meta_description"),
+    metaKeyword: text("meta_keyword"),
+    metaH1: text("meta_h1"),
+
+    image: text("image"),
+
+    top: boolean("top").notNull().default(false),       // в верхнем меню блога
+    column: integer("column").notNull().default(1),     // колонки мега-меню
+    sortOrder: integer("sort_order").notNull().default(0),
+
+    status: boolean("status").notNull().default(true),
+    noindex: boolean("noindex").notNull().default(false),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const blogCategoryPath = pgTable("blog_category_path", {
+    categoryId: integer("category_id")
+        .notNull()
+        .references(() => blogCategories.id, { onDelete: "cascade" }),
+    pathId: integer("path_id")
+        .notNull()
+        .references(() => blogCategories.id, { onDelete: "cascade" }),
+    level: integer("level").notNull(),
+}, (t) => [
+    primaryKey({ columns: [t.categoryId, t.pathId] }),
+]);
+
+export const articleToCategory = pgTable("article_to_category", {
+    articleId: integer("article_id")
+        .notNull()
+        .references(() => articles.id, { onDelete: "cascade" }),
+    categoryId: integer("category_id")
+        .notNull()
+        .references(() => blogCategories.id, { onDelete: "cascade" }),
+    isMain: boolean("is_main").notNull().default(false),
+}, (t) => [
+    primaryKey({ columns: [t.articleId, t.categoryId] }),
+]);
+
+export const blogCategoriesRelations = relations(blogCategories, ({ one, many }) => ({
+    parent: one(blogCategories, {
+        fields: [blogCategories.parentId],
+        references: [blogCategories.id],
+        relationName: "blog_category_parent",
+    }),
+    children: many(blogCategories, {
+        relationName: "blog_category_parent",
+    }),
+    paths: many(blogCategoryPath),
+    articleLinks: many(articleToCategory),
+}));
+
+export const blogCategoryPathRelations = relations(blogCategoryPath, ({ one }) => ({
+    category: one(blogCategories, {
+        fields: [blogCategoryPath.categoryId],
+        references: [blogCategories.id],
+    }),
+    path: one(blogCategories, {
+        fields: [blogCategoryPath.pathId],
+        references: [blogCategories.id],
+    }),
+}));
+
+// ============================================================
+// Articles
+// ============================================================
+
+export const articles = pgTable("articles", {
+    id: serial("id").primaryKey(),
+
+    // автор (опционально, обычно admin)
+    authorId: text("author_id")
+        .references(() => users.id, { onDelete: "set null" }),
+
+    title: text("title").notNull(),
+    slug: text("slug").notNull().unique(),
+
+    excerpt: text("excerpt"),          // короткое описание / превью
+    content: text("content"),          // markdown / html (пока text)
+
+    image: text("image"),              // главное изображение
+
+    metaTitle: text("meta_title"),
+    metaDescription: text("meta_description"),
+    metaKeyword: text("meta_keyword"),
+    metaH1: text("meta_h1"),
+
+    // публикация
+    status: boolean("status").notNull().default(false), // false = draft, true = published
+    publishedAt: timestamp("published_at", { mode: "date" }),
+
+    sortOrder: integer("sort_order").notNull().default(0),
+    viewed: integer("viewed").notNull().default(0),
+    noindex: boolean("noindex").notNull().default(false),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const articlesRelations = relations(articles, ({ one, many }) => ({
+    author: one(users, {
+        fields: [articles.authorId],
+        references: [users.id],
+    }),
+    categories: many(articleToCategory),
+}));
+
+export const articleToCategoryRelations = relations(articleToCategory, ({ one }) => ({
+    article: one(articles, {
+        fields: [articleToCategory.articleId],
+        references: [articles.id],
+    }),
+    category: one(blogCategories, {
+        fields: [articleToCategory.categoryId],
+        references: [blogCategories.id],
+    }),
+}));
 
 

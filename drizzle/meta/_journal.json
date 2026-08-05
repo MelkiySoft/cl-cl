@@ -8,6 +8,13 @@
       "when": 1785487436647,
       "tag": "0000_nappy_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785920018483,
+      "tag": "0001_purple_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

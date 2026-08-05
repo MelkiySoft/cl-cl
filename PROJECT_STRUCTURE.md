@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-04T18:18:05.944Z
+> Последнее обновление: 2026-08-05T10:33:46.538Z
 
 ```bash
 ├── actions/
@@ -26,12 +26,20 @@
 │   │   │   └── page.tsx
 │   │   └── layout.tsx
 │   ├── (public)/
+│   │   ├── article/
+│   │   │   ├── [slug]/
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── blog/
+│   │   │   └── [[...path]]/
+│   │   │       └── page.tsx
 │   │   ├── catalog/
 │   │   │   └── [[...path]]/
 │   │   │       └── page.tsx
 │   │   ├── company/
-│   │   │   └── [slug]/
-│   │   │       └── page.tsx
+│   │   │   ├── [slug]/
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── api/
@@ -49,6 +57,10 @@
 │   │   ├── layout/
 │   │   └── provider/
 │   ├── site/
+│   │   ├── blog/
+│   │   │   ├── article-grid.tsx
+│   │   │   ├── blog-category-sidebar.tsx
+│   │   │   └── blog-toolbar.tsx
 │   │   ├── catalog/
 │   │   │   ├── catalog-pagination.tsx
 │   │   │   ├── catalog-toolbar.tsx
@@ -89,13 +101,17 @@
 ├── drizzle/
 │   ├── meta/
 │   │   ├── _journal.json
-│   │   └── 0000_snapshot.json
-│   └── 0000_nappy_sprite.sql
+│   │   ├── 0000_snapshot.json
+│   │   └── 0001_snapshot.json
+│   ├── 0000_nappy_sprite.sql
+│   └── 0001_purple_hellfire_club.sql
 ├── exports/
 │   └── geo_usa_full.xml
 ├── hooks/
 ├── lib/
+│   ├── articles.ts
 │   ├── auth.ts
+│   ├── blog-categories.ts
 │   ├── categories.ts
 │   ├── companies.ts
 │   ├── r2.ts
@@ -104,6 +120,9 @@
 │   └── verification.log
 ├── public/
 │   ├── demo/
+│   │   ├── article1.jpg
+│   │   ├── article2.jpg
+│   │   ├── article3.jpg
 │   │   ├── category.jpg
 │   │   ├── company1.jpg
 │   │   ├── company2.jpg
@@ -126,6 +145,8 @@
 │   │   ├── generate-slugs.ts
 │   │   └── load-geo-usa.ts
 │   ├── seed/
+│   │   ├── articles.ts
+│   │   ├── blog-categories.ts
 │   │   ├── categories.ts
 │   │   ├── companies.ts
 │   │   └── users.ts

@@ -2,10 +2,11 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-05T10:33:46.538Z
+> Последнее обновление: 2026-08-05T13:42:55.226Z
 
 ```bash
 ├── actions/
+│   ├── account.ts
 │   ├── auth.ts
 │   └── upload.ts
 ├── app/
@@ -18,6 +19,8 @@
 │   │   │   └── page.tsx
 │   │   └── layout.tsx
 │   ├── (dashboard)/
+│   │   ├── account/
+│   │   │   └── page.tsx
 │   │   ├── admin/
 │   │   │   └── page.tsx
 │   │   ├── customer/
@@ -52,9 +55,14 @@
 │   └── layout.tsx
 ├── components/
 │   ├── dashboard/
+│   │   ├── account/
+│   │   │   └── account-form.tsx
 │   │   ├── admin/
 │   │   ├── customer/
 │   │   ├── layout/
+│   │   │   ├── header.tsx
+│   │   │   ├── nav-config.ts
+│   │   │   └── sidebar.tsx
 │   │   └── provider/
 │   ├── site/
 │   │   ├── blog/

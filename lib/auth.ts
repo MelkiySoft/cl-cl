@@ -76,19 +76,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ],
 
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
+            // При логине
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.name = user.name;
+                token.picture = user.image; // next-auth использует picture
             }
+
+            // При вызове update() с клиента
+            if (trigger === "update" && session) {
+                if (session.name !== undefined) token.name = session.name;
+                if (session.image !== undefined) token.picture = session.image;
+                // можно добавить и другие поля при необходимости
+            }
+
             return token;
         },
+
         async session({ session, token }) {
             if (token) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as UserRole;
+                session.user.name = token.name as string | null | undefined;
+                session.user.image = token.picture as string | null | undefined;
             }
             return session;
         },
     },
+
 });

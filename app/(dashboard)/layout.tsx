@@ -1,28 +1,39 @@
-import { logout } from "@/actions/auth";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { DashboardHeader } from "@/components/dashboard/layout/header";
+import { DashboardSidebar } from "@/components/dashboard/layout/sidebar";
+import type { UserRole } from "@/db/schema";
 
-export default function DashboardLayout({
-    children,
-}: {
+export default async function DashboardLayout({
+                                                  children,
+                                              }: {
     children: React.ReactNode;
 }) {
+    const session = await auth();
+
+    if (!session?.user) {
+        redirect("/login");
+    }
+
+    const user = {
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image,
+        role: session.user.role as UserRole,
+    };
+
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-            <header className="border-b bg-white dark:bg-zinc-900">
-                <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-                    <span className="font-medium">Dashboard</span>
+        <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
 
-                    <form action={logout}>
-                        <button
-                            type="submit"
-                            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            Выйти
-                        </button>
-                    </form>
-                </div>
-            </header>
+            <DashboardSidebar role={user.role} />
 
-            <main className="container mx-auto px-4 py-8">{children}</main>
+            <div className="flex flex-1 flex-col">
+                <DashboardHeader user={user} />
+
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }

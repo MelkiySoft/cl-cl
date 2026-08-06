@@ -16,7 +16,9 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:geo:load": "tsx scripts/geo/load-geo-usa.ts",
     "db:geo:generate-slugs": "tsx scripts/geo/generate-slugs.ts",
-    "db:geo:export-to-xml": "tsx scripts/geo/export-to-xml.ts"
+    "db:geo:export-to-xml": "tsx scripts/geo/export-to-xml.ts",
+    "db:r2:cleanup": "tsx scripts/cleanup-r2-orphans.ts",
+    "db:r2:cleanup:execute": "tsx scripts/cleanup-r2-orphans.ts --execute"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",

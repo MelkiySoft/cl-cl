@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-05T13:42:55.226Z
+> Последнее обновление: 2026-08-06T13:10:47.912Z
 
 ```bash
 ├── actions/
@@ -158,6 +158,7 @@
 │   │   ├── categories.ts
 │   │   ├── companies.ts
 │   │   └── users.ts
+│   ├── cleanup-r2-orphans.ts
 │   ├── generate-structure.js
 │   └── seed.ts
 ├── types/

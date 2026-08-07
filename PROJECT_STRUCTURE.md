@@ -2,12 +2,13 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-06T13:10:47.912Z
+> Последнее обновление: 2026-08-07T13:40:51.536Z
 
 ```bash
 ├── actions/
 │   ├── account.ts
 │   ├── auth.ts
+│   ├── provider-company.ts
 │   └── upload.ts
 ├── app/
 │   ├── (auth)/
@@ -26,6 +27,12 @@
 │   │   ├── customer/
 │   │   │   └── page.tsx
 │   │   ├── provider/
+│   │   │   ├── company/
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── new/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
 │   │   │   └── page.tsx
 │   │   └── layout.tsx
 │   ├── (public)/
@@ -64,6 +71,10 @@
 │   │   │   ├── nav-config.ts
 │   │   │   └── sidebar.tsx
 │   │   └── provider/
+│   │       ├── company-categories-fields.tsx
+│   │       ├── company-gallery.tsx
+│   │       ├── create-company-form.tsx
+│   │       └── edit-company-form.tsx
 │   ├── site/
 │   │   ├── blog/
 │   │   │   ├── article-grid.tsx
@@ -122,6 +133,7 @@
 │   ├── blog-categories.ts
 │   ├── categories.ts
 │   ├── companies.ts
+│   ├── provider-categories.ts
 │   ├── r2.ts
 │   └── utils.ts
 ├── logs/

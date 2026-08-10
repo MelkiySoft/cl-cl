@@ -1,9 +1,42 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+
+
+// Список разрешённых IP (через запятую в env)
+const ALLOWED_IPS = "194.107.178.190666,192.168.0.1666"
+    .split(",")
+    .map((ip) => ip.trim())
+    .filter(Boolean);
+
+function getClientIp(req: Request): string | null {
+    const forwarded = req.headers.get("x-forwarded-for");
+    console.log(forwarded);
+    if (forwarded) {
+        return forwarded.split(",")[0]?.trim() || null;
+    }
+    return req.headers.get("x-real-ip");
+}
+
+
+
+
 export const proxy = auth((req) => {
     const { nextUrl } = req;
     const isLoggedIn = !!req.auth;
+
+    // === IP Restriction ===
+    // В development проверку пропускаем, чтобы не мешала локальной работе
+    if (process.env.NODE_ENV === "production" && ALLOWED_IPS.length > 0) {
+        const clientIp = getClientIp(req);
+        if (!clientIp || !ALLOWED_IPS.includes(clientIp)) {
+            return new NextResponse(
+                `Access denied. Your IP (${clientIp || "unknown"}) is not allowed.`,
+                { status: 403 }
+            );
+        }
+    }
+
     const role = req.auth?.user?.role;
     const path = nextUrl.pathname;
 

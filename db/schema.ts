@@ -155,17 +155,21 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
     children: many(categories, {
         relationName: "category_parent",
     }),
-    paths: many(categoryPath),
+    paths: many(categoryPath, {
+        relationName: "category_paths",
+    }),
     companyLinks: many(companyToCategory),
 }));
 export const categoryPathRelations = relations(categoryPath, ({ one }) => ({
     category: one(categories, {
         fields: [categoryPath.categoryId],
         references: [categories.id],
+        relationName: "category_paths",
     }),
     path: one(categories, {
         fields: [categoryPath.pathId],
         references: [categories.id],
+        relationName: "category_path_node",
     }),
 }));
 
@@ -441,7 +445,9 @@ export const blogCategoriesRelations = relations(blogCategories, ({ one, many })
     children: many(blogCategories, {
         relationName: "blog_category_parent",
     }),
-    paths: many(blogCategoryPath),
+    paths: many(blogCategoryPath, {
+        relationName: "blog_category_paths",
+    }),
     articleLinks: many(articleToCategory),
 }));
 
@@ -449,10 +455,12 @@ export const blogCategoryPathRelations = relations(blogCategoryPath, ({ one }) =
     category: one(blogCategories, {
         fields: [blogCategoryPath.categoryId],
         references: [blogCategories.id],
+        relationName: "blog_category_paths",
     }),
     path: one(blogCategories, {
         fields: [blogCategoryPath.pathId],
         references: [blogCategories.id],
+        relationName: "blog_category_path_node",
     }),
 }));
 

@@ -63,6 +63,13 @@ export function EditCompanyForm({
     const [uploadError, setUploadError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const router = useRouter();
+    useEffect(() => {
+        if (state?.success) {
+            router.refresh();
+        }
+    }, [state, router]);
+
     // Сбрасываем success-сообщение через несколько секунд можно позже
 
     const initials = company.name
@@ -280,6 +287,7 @@ export function EditCompanyForm({
             </div>
 
             <CompanyCategoriesFields
+                key={`${categorySelection.mainId ?? "x"}-${(categorySelection.extraIds ?? []).join("-")}`}
                 leaves={leaves}
                 initialMainId={categorySelection.mainId}
                 initialExtraIds={categorySelection.extraIds}

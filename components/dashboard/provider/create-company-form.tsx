@@ -1,21 +1,54 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { createCompany } from "@/actions/provider-company";
 import {
-    createCompany,
-    type CompanyFormState,
-} from "@/actions/provider-company";
+    companyCreateSchema,
+    type CompanyCreateValues,
+} from "@/lib/validations/company";
 
 export function CreateCompanyForm() {
-    const [state, formAction, isPending] = useActionState<
-        CompanyFormState,
-        FormData
-    >(createCompany, {});
+    const [isPending, startTransition] = useTransition();
+    const [serverError, setServerError] = useState<string | null>(null);
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<CompanyCreateValues>({
+        resolver: zodResolver(companyCreateSchema),
+        defaultValues: {
+            name: "",
+            legalName: "",
+            dbaName: "",
+            entityType: "company",
+            description: "",
+            phone: "",
+            email: "",
+            website: "",
+        },
+    });
+
+    function onSubmit(values: CompanyCreateValues) {
+        setServerError(null);
+
+        startTransition(async () => {
+            const result = await createCompany(values);
+
+            // если дошли сюда — значит redirect не сработал (ошибка)
+            if (result?.error) {
+                setServerError(result.error);
+            }
+        });
+    }
 
     return (
-        <form action={formAction} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             {/* Names */}
             <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -24,18 +57,15 @@ export function CreateCompanyForm() {
                     </label>
                     <input
                         id="name"
-                        name="name"
-                        type="text"
-                        required
-                        minLength={2}
-                        maxLength={120}
+                        {...register("name")}
                         placeholder="Sparkle Clean Co"
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         disabled={isPending}
                     />
-                    <p className="text-xs text-muted-foreground">
-                        Shown in the catalog
-                    </p>
+                    <p className="text-xs text-muted-foreground">Shown in the catalog</p>
+                    {errors.name && (
+                        <p className="text-sm text-destructive">{errors.name.message}</p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -44,11 +74,7 @@ export function CreateCompanyForm() {
                     </label>
                     <input
                         id="legalName"
-                        name="legalName"
-                        type="text"
-                        required
-                        minLength={2}
-                        maxLength={160}
+                        {...register("legalName")}
                         placeholder="Sparkle Clean Co LLC"
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         disabled={isPending}
@@ -56,6 +82,9 @@ export function CreateCompanyForm() {
                     <p className="text-xs text-muted-foreground">
                         Official registered name
                     </p>
+                    {errors.legalName && (
+                        <p className="text-sm text-destructive">{errors.legalName.message}</p>
+                    )}
                 </div>
             </div>
 
@@ -65,13 +94,14 @@ export function CreateCompanyForm() {
                 </label>
                 <input
                     id="dbaName"
-                    name="dbaName"
-                    type="text"
-                    maxLength={160}
+                    {...register("dbaName")}
                     placeholder="Optional"
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     disabled={isPending}
                 />
+                {errors.dbaName && (
+                    <p className="text-sm text-destructive">{errors.dbaName.message}</p>
+                )}
             </div>
 
             {/* Entity type */}
@@ -81,14 +111,16 @@ export function CreateCompanyForm() {
                 </label>
                 <select
                     id="entityType"
-                    name="entityType"
-                    defaultValue="company"
+                    {...register("entityType")}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     disabled={isPending}
                 >
                     <option value="company">Company</option>
                     <option value="individual">Individual</option>
                 </select>
+                {errors.entityType && (
+                    <p className="text-sm text-destructive">{errors.entityType.message}</p>
+                )}
             </div>
 
             {/* Description */}
@@ -98,13 +130,15 @@ export function CreateCompanyForm() {
                 </label>
                 <textarea
                     id="description"
-                    name="description"
-                    rows={5}
-                    maxLength={5000}
-                    placeholder="Residential and commercial cleaning in the greater Austin area..."
+                    {...register("description")}
+                    rows={4}
+                    placeholder="Short description of your services..."
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     disabled={isPending}
                 />
+                {errors.description && (
+                    <p className="text-sm text-destructive">{errors.description.message}</p>
+                )}
             </div>
 
             {/* Contacts */}
@@ -115,12 +149,15 @@ export function CreateCompanyForm() {
                     </label>
                     <input
                         id="phone"
-                        name="phone"
                         type="tel"
+                        {...register("phone")}
                         placeholder="+1 555 123 4567"
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         disabled={isPending}
                     />
+                    {errors.phone && (
+                        <p className="text-sm text-destructive">{errors.phone.message}</p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -129,12 +166,15 @@ export function CreateCompanyForm() {
                     </label>
                     <input
                         id="email"
-                        name="email"
                         type="email"
+                        {...register("email")}
                         placeholder="info@example.com"
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         disabled={isPending}
                     />
+                    {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email.message}</p>
+                    )}
                 </div>
             </div>
 
@@ -144,16 +184,19 @@ export function CreateCompanyForm() {
                 </label>
                 <input
                     id="website"
-                    name="website"
                     type="url"
+                    {...register("website")}
                     placeholder="https://example.com"
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     disabled={isPending}
                 />
+                {errors.website && (
+                    <p className="text-sm text-destructive">{errors.website.message}</p>
+                )}
             </div>
 
-            {state?.error && (
-                <p className="text-sm text-destructive">{state.error}</p>
+            {serverError && (
+                <p className="text-sm text-destructive">{serverError}</p>
             )}
 
             <Button type="submit" disabled={isPending}>

@@ -77,6 +77,8 @@ export async function createCompany(
         }
     }
 
+    let createdId: number;
+
     try {
         const [created] = await db
             .insert(companies)
@@ -96,12 +98,15 @@ export async function createCompany(
             })
             .returning({ id: companies.id });
 
-        revalidatePath("/provider/company");
-        redirect(`/provider/company/${created.id}`);
+        createdId = created.id;
     } catch (err) {
         console.error("createCompany error:", err);
         return { error: "Failed to create company" };
     }
+
+    // redirect должен быть ВНЕ try/catch
+    revalidatePath("/provider/company");
+    redirect(`/provider/company/${createdId}`);
 }
 
 /** Получить компанию для редактирования (только свою) */

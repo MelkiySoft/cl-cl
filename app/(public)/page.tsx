@@ -1,4 +1,5 @@
 import { CompanyCarousel } from "@/components/site/company-carousel"
+import { ArticleCarousel } from "@/components/site/article-carousel"
 
 export default function HomePage() {
     return (
@@ -19,6 +20,11 @@ export default function HomePage() {
             <CompanyCarousel
                 title="Top in New York"
                 companyIds={[1218, 1215, 1210]}
+            />
+
+            <ArticleCarousel
+                title="Latest Articles"
+                articleIds={[11, 14, 17, 12]}
             />
 
         </div>

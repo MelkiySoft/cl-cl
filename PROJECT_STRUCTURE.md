@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-13T10:58:11.444Z
+> Последнее обновление: 2026-08-13T11:08:09.997Z
 
 ```bash
 ├── actions/
@@ -78,6 +78,7 @@
 │   │       └── edit-company-form.tsx
 │   ├── site/
 │   │   ├── blog/
+│   │   │   ├── article-card.tsx
 │   │   │   ├── article-grid.tsx
 │   │   │   ├── blog-category-sidebar.tsx
 │   │   │   └── blog-toolbar.tsx
@@ -100,6 +101,7 @@
 │   │   │   ├── mobile-nav.tsx
 │   │   │   ├── theme-toggle.tsx
 │   │   │   └── user-nav.tsx
+│   │   ├── article-carousel.tsx
 │   │   └── company-carousel.tsx
 │   ├── ui/
 │   │   ├── avatar.tsx

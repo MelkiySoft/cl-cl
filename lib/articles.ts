@@ -1,13 +1,9 @@
 import { cache } from "react"
-import { eq, and, asc } from "drizzle-orm"
+import { eq, and, inArray } from "drizzle-orm"
 
 import { db } from "@/db"
-import {
-    articles,
-    articleToCategory,
-    blogCategories,
-    users,
-} from "@/db/schema"
+import { articles } from "@/db/schema"
+import type { CatalogArticle } from "@/lib/blog-categories"
 
 export type ArticleDetail = {
     id: number
@@ -95,5 +91,41 @@ export const getArticleBySlug = cache(
                 : null,
             categories: cats,
         }
+    }
+)
+
+/**
+ * Получить статьи по списку id (только опубликованные).
+ * Порядок возвращаемых статей соответствует порядку переданных id.
+ */
+export const getArticlesByIds = cache(
+    async (ids: number[]): Promise<CatalogArticle[]> => {
+        if (!ids.length) return []
+
+        const uniqueIds = [...new Set(ids)]
+
+        const rows = await db.query.articles.findMany({
+            where: and(
+                inArray(articles.id, uniqueIds),
+                eq(articles.status, true)
+            ),
+            columns: {
+                id: true,
+                title: true,
+                slug: true,
+                excerpt: true,
+                image: true,
+                publishedAt: true,
+                viewed: true,
+            },
+        })
+
+        // Оставляем только те, у которых есть дата публикации
+        const published = rows.filter((a) => a.publishedAt !== null)
+
+        const map = new Map(published.map((a) => [a.id, a]))
+        return ids
+            .map((id) => map.get(id))
+            .filter((a): a is CatalogArticle => Boolean(a))
     }
 )

@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-11T09:35:26.926Z
+> Последнее обновление: 2026-08-13T05:55:52.459Z
 
 ```bash
 ├── actions/
@@ -125,6 +125,8 @@
 │   └── geo_usa_full.xml
 ├── hooks/
 ├── lib/
+│   ├── validations/
+│   │   └── company.ts
 │   ├── articles.ts
 │   ├── auth.ts
 │   ├── blog-categories.ts

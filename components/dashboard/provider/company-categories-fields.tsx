@@ -1,63 +1,47 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { LeafOption } from "@/lib/provider-categories";
 
 type Props = {
     leaves: LeafOption[];
-    initialMainId: number | null;
-    initialExtraIds: number[];
+    mainCategoryId: number | null;
+    extraCategoryId1: number | null;
+    extraCategoryId2: number | null;
+    onMainChange: (id: number | null) => void;
+    onExtra1Change: (id: number | null) => void;
+    onExtra2Change: (id: number | null) => void;
     disabled?: boolean;
 };
 
 export function CompanyCategoriesFields({
                                             leaves,
-                                            initialMainId,
-                                            initialExtraIds,
+                                            mainCategoryId,
+                                            extraCategoryId1,
+                                            extraCategoryId2,
+                                            onMainChange,
+                                            onExtra1Change,
+                                            onExtra2Change,
                                             disabled,
                                         }: Props) {
-    const [mainId, setMainId] = useState<number | "">(
-        initialMainId ?? ""
-    );
-    const [extra1, setExtra1] = useState<number | "">(
-        initialExtraIds[0] ?? ""
-    );
-    const [extra2, setExtra2] = useState<number | "">(
-        initialExtraIds[1] ?? ""
-    );
-
     const mainLeaf = useMemo(
-        () => (mainId === "" ? null : leaves.find((l) => l.id === mainId) ?? null),
-        [mainId, leaves]
+        () =>
+            mainCategoryId == null
+                ? null
+                : (leaves.find((l) => l.id === mainCategoryId) ?? null),
+        [mainCategoryId, leaves]
     );
 
     const extraOptions = useMemo(() => {
         if (!mainLeaf) return [];
         return leaves.filter(
-            (l) =>
-                l.rootId === mainLeaf.rootId &&
-                l.id !== mainLeaf.id
+            (l) => l.rootId === mainLeaf.rootId && l.id !== mainLeaf.id
         );
     }, [mainLeaf, leaves]);
 
-    const extra1Options = extraOptions.filter((l) => l.id !== extra2);
-    const extra2Options = extraOptions.filter((l) => l.id !== extra1);
+    const extra1Options = extraOptions.filter((l) => l.id !== extraCategoryId2);
+    const extra2Options = extraOptions.filter((l) => l.id !== extraCategoryId1);
 
-    function onMainChange(value: string) {
-        const next = value === "" ? "" : Number(value);
-        setMainId(next);
-        setExtra1("");
-        setExtra2("");
-    }
-
-    const autoParents =
-        mainLeaf && mainLeaf.pathIds.length > 1
-            ? mainLeaf.pathIds
-                .slice(0, -1)
-                .map((id) => leaves.find((l) => l.pathIds.includes(id)))
-            : [];
-
-    // Для подписи предков лучше взять label main без последнего сегмента
     const parentsLabel = mainLeaf
         ? mainLeaf.label.split(" › ").slice(0, -1).join(" › ")
         : null;
@@ -67,21 +51,25 @@ export function CompanyCategoriesFields({
             <div>
                 <h3 className="text-sm font-medium">Categories</h3>
                 <p className="text-xs text-muted-foreground">
-                    Choose one main specialization and up to two related
-                    categories from the same branch.
+                    Choose one main specialization and up to two related categories from
+                    the same branch.
                 </p>
             </div>
 
-            {/* Main */}
             <div className="space-y-2">
                 <label htmlFor="mainCategoryId" className="text-sm font-medium">
                     Main category
                 </label>
                 <select
                     id="mainCategoryId"
-                    name="mainCategoryId"
-                    value={mainId === "" ? "" : String(mainId)}
-                    onChange={(e) => onMainChange(e.target.value)}
+                    value={mainCategoryId ?? ""}
+                    onChange={(e) => {
+                        const value = e.target.value === "" ? null : Number(e.target.value);
+                        onMainChange(value);
+                        // при смене основной категории сбрасываем дополнительные
+                        onExtra1Change(null);
+                        onExtra2Change(null);
+                    }}
                     disabled={disabled}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
@@ -94,24 +82,17 @@ export function CompanyCategoriesFields({
                 </select>
             </div>
 
-            {/* Extra 1 & 2 */}
             <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                    <label
-                        htmlFor="extraCategoryId1"
-                        className="text-sm font-medium"
-                    >
+                    <label htmlFor="extraCategoryId1" className="text-sm font-medium">
                         Additional category
                     </label>
                     <select
                         id="extraCategoryId1"
-                        name="extraCategoryId1"
-                        value={extra1 === "" ? "" : String(extra1)}
+                        value={extraCategoryId1 ?? ""}
                         onChange={(e) =>
-                            setExtra1(
-                                e.target.value === ""
-                                    ? ""
-                                    : Number(e.target.value)
+                            onExtra1Change(
+                                e.target.value === "" ? null : Number(e.target.value)
                             )
                         }
                         disabled={disabled || !mainLeaf}
@@ -127,21 +108,15 @@ export function CompanyCategoriesFields({
                 </div>
 
                 <div className="space-y-2">
-                    <label
-                        htmlFor="extraCategoryId2"
-                        className="text-sm font-medium"
-                    >
+                    <label htmlFor="extraCategoryId2" className="text-sm font-medium">
                         Additional category
                     </label>
                     <select
                         id="extraCategoryId2"
-                        name="extraCategoryId2"
-                        value={extra2 === "" ? "" : String(extra2)}
+                        value={extraCategoryId2 ?? ""}
                         onChange={(e) =>
-                            setExtra2(
-                                e.target.value === ""
-                                    ? ""
-                                    : Number(e.target.value)
+                            onExtra2Change(
+                                e.target.value === "" ? null : Number(e.target.value)
                             )
                         }
                         disabled={disabled || !mainLeaf}

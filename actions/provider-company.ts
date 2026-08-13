@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { companies, companyImages, companyToCategory } from "@/db/schema";
 import { slugify } from "@/lib/utils";
-
+import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
 
 export type CompanyFormState = {
     error?: string;
@@ -43,10 +43,10 @@ export async function getMyCompanies() {
     });
 }
 
+
 /** Создание компании */
 export async function createCompany(
-    _prevState: CompanyFormState,
-    formData: FormData
+    data: CompanyCreateValues
 ): Promise<CompanyFormState> {
     const session = await auth();
     if (!session?.user?.id) {
@@ -57,27 +57,8 @@ export async function createCompany(
         return { error: "Only providers can create companies" };
     }
 
-    const name = (formData.get("name") as string)?.trim();
-    const legalName = (formData.get("legalName") as string)?.trim();
-    const dbaName = (formData.get("dbaName") as string)?.trim() || null;
-    const description = (formData.get("description") as string)?.trim() || null;
-    const phone = (formData.get("phone") as string)?.trim() || null;
-    const email = (formData.get("email") as string)?.trim() || null;
-    const website = (formData.get("website") as string)?.trim() || null;
-    const entityType = (formData.get("entityType") as string) || "company";
-
-    if (!name || name.length < 2) {
-        return { error: "Display name is required (min 2 characters)" };
-    }
-    if (!legalName || legalName.length < 2) {
-        return { error: "Legal name is required (min 2 characters)" };
-    }
-    if (entityType !== "individual" && entityType !== "company") {
-        return { error: "Invalid entity type" };
-    }
-
     // Уникальный slug
-    let baseSlug = slugify(name);
+    let baseSlug = slugify(data.name);
     if (!baseSlug) baseSlug = "company";
 
     let slug = baseSlug;
@@ -96,35 +77,31 @@ export async function createCompany(
         }
     }
 
-    let createdId: number;
-
     try {
         const [created] = await db
             .insert(companies)
             .values({
                 userId: session.user.id,
-                name,
-                legalName,
-                dbaName,
+                name: data.name,
+                legalName: data.legalName,
+                dbaName: data.dbaName ?? null,
                 slug,
-                description,
-                phone,
-                email,
-                website,
-                entityType: entityType as "individual" | "company",
+                description: data.description ?? null,
+                phone: data.phone ?? null,
+                email: data.email ?? null,
+                website: data.website ?? null,
+                entityType: data.entityType,
                 status: false,
                 moderationStatus: "pending",
             })
             .returning({ id: companies.id });
 
-        createdId = created.id;
+        revalidatePath("/provider/company");
+        redirect(`/provider/company/${created.id}`);
     } catch (err) {
         console.error("createCompany error:", err);
         return { error: "Failed to create company" };
     }
-
-    revalidatePath("/provider/company");
-    redirect(`/provider/company/${createdId}`);
 }
 
 /** Получить компанию для редактирования (только свою) */
@@ -144,15 +121,14 @@ export async function getCompanyForEdit(id: number) {
 
 /** Обновление компании */
 export async function updateCompany(
-    _prevState: CompanyFormState,
-    formData: FormData
+    data: CompanyFormValues
 ): Promise<CompanyFormState> {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Unauthorized" };
     }
 
-    const id = Number(formData.get("id"));
+    const id = data.id;
     if (!id || Number.isNaN(id)) {
         return { error: "Invalid company id" };
     }
@@ -170,55 +146,20 @@ export async function updateCompany(
         return { error: "Company not found" };
     }
 
-    const name = (formData.get("name") as string)?.trim();
-    const legalName = (formData.get("legalName") as string)?.trim();
-    const dbaName = (formData.get("dbaName") as string)?.trim() || null;
-    const description = (formData.get("description") as string)?.trim() || null;
-    const phone = (formData.get("phone") as string)?.trim() || null;
-    const email = (formData.get("email") as string)?.trim() || null;
-    const website = (formData.get("website") as string)?.trim() || null;
-    const entityType = (formData.get("entityType") as string) || "company";
-    const image = (formData.get("image") as string)?.trim() || null;
-
-    const mainCategoryId = formData.get("mainCategoryId")
-        ? Number(formData.get("mainCategoryId"))
-        : null;
-    const extraCategoryId1 = formData.get("extraCategoryId1")
-        ? Number(formData.get("extraCategoryId1"))
-        : null;
-    const extraCategoryId2 = formData.get("extraCategoryId2")
-        ? Number(formData.get("extraCategoryId2"))
-        : null;
-
-    if (!name || name.length < 2) {
-        return { error: "Display name is required (min 2 characters)" };
-    }
-    if (!legalName || legalName.length < 2) {
-        return { error: "Legal name is required (min 2 characters)" };
-    }
-
-    if (entityType !== "individual" && entityType !== "company") {
-        return { error: "Invalid entity type" };
-    }
-
-    // Slug: если пользователь изменил name — можно оставить старый slug
-    // (пока не даём менять slug вручную, чтобы не ломать ссылки)
-
     try {
         await db
             .update(companies)
             .set({
-                name,
-                legalName,
-                dbaName,
-                description,
-                phone,
-                email,
-                website,
-                entityType: entityType as "individual" | "company",
-                image,
+                name: data.name,
+                legalName: data.legalName,
+                dbaName: data.dbaName ?? null,
+                description: data.description ?? null,
+                phone: data.phone ?? null,
+                email: data.email ?? null,
+                website: data.website ?? null,
+                entityType: data.entityType,
+                image: data.image ?? null,
                 updatedAt: new Date(),
-                // moderationStatus и status provider менять не может
             })
             .where(
                 and(
@@ -227,19 +168,19 @@ export async function updateCompany(
                 )
             );
 
-// --- Categories ---
-        const leafIds = [mainCategoryId, extraCategoryId1, extraCategoryId2].filter(
-            (id): id is number => typeof id === "number" && !Number.isNaN(id) && id > 0
-        );
+        // --- Categories ---
+        const leafIds = [
+            data.mainCategoryId,
+            data.extraCategoryId1,
+            data.extraCategoryId2,
+        ].filter((id): id is number => typeof id === "number" && id > 0);
 
-// уникальные
         const uniqueLeafIds = [...new Set(leafIds)];
 
         if (uniqueLeafIds.length > 3) {
             return { error: "Maximum 3 categories" };
         }
 
-// Подтягиваем pathIds для листьев
         const { getLeafOptions } = await import("@/lib/provider-categories");
         const allLeaves = await getLeafOptions();
         const leafMap = new Map(allLeaves.map((l) => [l.id, l]));
@@ -250,7 +191,6 @@ export async function updateCompany(
             }
         }
 
-// Все должны быть из одной ветки
         if (uniqueLeafIds.length > 0) {
             const roots = new Set(
                 uniqueLeafIds.map((id) => leafMap.get(id)!.rootId)
@@ -260,7 +200,6 @@ export async function updateCompany(
             }
         }
 
-// Собираем все categoryId для записи (листья + предки)
         const toLink = new Set<number>();
         for (const lid of uniqueLeafIds) {
             for (const pid of leafMap.get(lid)!.pathIds) {
@@ -268,15 +207,14 @@ export async function updateCompany(
             }
         }
 
-// Перезаписываем связи
         await db
             .delete(companyToCategory)
             .where(eq(companyToCategory.companyId, id));
 
         if (toLink.size > 0) {
             const mainLeaf =
-                mainCategoryId && leafMap.has(mainCategoryId)
-                    ? mainCategoryId
+                data.mainCategoryId && leafMap.has(data.mainCategoryId)
+                    ? data.mainCategoryId
                     : uniqueLeafIds[0];
 
             await db.insert(companyToCategory).values(
@@ -290,7 +228,7 @@ export async function updateCompany(
 
         revalidatePath("/provider/company");
         revalidatePath(`/provider/company/${id}`);
-        revalidatePath(`/company/${existing.slug}`); // публичная страница
+        revalidatePath(`/company/${existing.slug}`);
 
         return { success: true };
     } catch (err) {

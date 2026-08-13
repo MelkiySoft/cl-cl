@@ -1,6 +1,5 @@
 import { cache } from "react"
-import { eq, and, asc } from "drizzle-orm"
-
+import { eq, and, asc, inArray } from "drizzle-orm"
 import { db } from "@/db"
 import {
     companies,
@@ -8,6 +7,7 @@ import {
     companyToCategory,
     categories,
 } from "@/db/schema"
+import type { CatalogCompany } from "@/lib/categories"
 
 export type CompanyDetail = {
     id: number
@@ -117,5 +117,44 @@ export const getCompanyBySlug = cache(
             images: company.images ?? [],
             categories: cats,
         }
+    }
+)
+
+/**
+ * Получить компании по списку id (только approved + status=true).
+ * Порядок возвращаемых компаний соответствует порядку переданных id.
+ */
+export const getCompaniesByIds = cache(
+    async (ids: number[]): Promise<CatalogCompany[]> => {
+        if (!ids.length) return []
+
+        const uniqueIds = [...new Set(ids)]
+
+        const rows = await db.query.companies.findMany({
+            where: and(
+                inArray(companies.id, uniqueIds),
+                eq(companies.status, true),
+                eq(companies.moderationStatus, "approved")
+            ),
+            columns: {
+                id: true,
+                name: true,
+                slug: true,
+                description: true,
+                image: true,
+                city: true,
+                state: true,
+                isInsured: true,
+                isBonded: true,
+                isLicensed: true,
+                viewed: true,
+            },
+        })
+
+        // Сохраняем порядок, который указал пользователь
+        const map = new Map(rows.map((c) => [c.id, c]))
+        return ids
+            .map((id) => map.get(id))
+            .filter((c): c is CatalogCompany => Boolean(c))
     }
 )

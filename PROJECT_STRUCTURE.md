@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-13T09:08:27.158Z
+> Последнее обновление: 2026-08-13T10:58:11.444Z
 
 ```bash
 ├── actions/
@@ -92,18 +92,20 @@
 │   │   │   ├── company-map-loader.tsx
 │   │   │   └── company-map.tsx
 │   │   ├── forms/
-│   │   └── layout/
-│   │       ├── catalog-menu.tsx
-│   │       ├── footer.tsx
-│   │       ├── header.tsx
-│   │       ├── logo.tsx
-│   │       ├── mobile-nav.tsx
-│   │       ├── theme-toggle.tsx
-│   │       └── user-nav.tsx
+│   │   ├── layout/
+│   │   │   ├── catalog-menu.tsx
+│   │   │   ├── footer.tsx
+│   │   │   ├── header.tsx
+│   │   │   ├── logo.tsx
+│   │   │   ├── mobile-nav.tsx
+│   │   │   ├── theme-toggle.tsx
+│   │   │   └── user-nav.tsx
+│   │   └── company-carousel.tsx
 │   ├── ui/
 │   │   ├── avatar.tsx
 │   │   ├── button.tsx
 │   │   ├── card.tsx
+│   │   ├── carousel.tsx
 │   │   ├── dropdown-menu.tsx
 │   │   ├── separator.tsx
 │   │   └── sheet.tsx

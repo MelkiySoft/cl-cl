@@ -1,22 +1,6 @@
 import "dotenv/config";
 
 import { db } from "@/db";
-import {
-    users,
-    accounts,
-    sessions,
-    verificationTokens,
-    categories,
-    categoryPath,
-    companyToCategory,
-    companyImages,
-    companies,
-    // blog
-    articleToCategory,
-    articles,
-    blogCategoryPath,
-    blogCategories,
-} from "@/db/schema";
 import { sql } from "drizzle-orm";
 
 import { seedUsers } from "./seed/users";
@@ -50,23 +34,6 @@ async function clearDatabase() {
         
     RESTART IDENTITY CASCADE
   `);
-
-/*    await db.delete(articleToCategory);
-    await db.delete(articles);
-    await db.delete(blogCategoryPath);
-    await db.delete(blogCategories);
-
-    await db.delete(companyToCategory);
-    await db.delete(companyImages);
-    await db.delete(companies);
-
-    await db.delete(categoryPath);
-    await db.delete(categories);
-
-    await db.delete(verificationTokens);
-    await db.delete(sessions);
-    await db.delete(accounts);
-    await db.delete(users);*/
 
     console.log("✓ Tables cleared\n");
 }

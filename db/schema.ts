@@ -231,10 +231,7 @@ export const companies = pgTable("companies", {
     website: text("website"),
 
     // US tax / business identifiers
-    // В продакшене SSN/ITIN лучше шифровать (pgcrypto / app-level)
     ein: text("ein"), // Employer Identification Number (XX-XXXXXXX)
-    ssn: text("ssn"), // Social Security Number (для sole prop)
-    itin: text("itin"), // Individual Taxpayer Identification Number
     businessStructure: text("business_structure").$type<BusinessStructure>(),
 
     yearFounded: integer("year_founded"),

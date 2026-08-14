@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-14T08:27:27.790Z
+> Последнее обновление: 2026-08-14T11:14:19.691Z
 
 ```bash
 ├── actions/
@@ -124,8 +124,10 @@
 │   ├── index.ts
 │   └── schema.ts
 ├── drizzle/
-│   └── meta/
-│       └── _journal.json
+│   ├── meta/
+│   │   ├── _journal.json
+│   │   └── 0000_snapshot.json
+│   └── 0000_demonic_moondragon.sql
 ├── exports/
 │   └── geo_usa_full.xml
 ├── hooks/

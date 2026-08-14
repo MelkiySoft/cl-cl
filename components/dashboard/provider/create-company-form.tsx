@@ -27,6 +27,7 @@ export function CreateCompanyForm() {
             legalName: "",
             dbaName: "",
             entityType: "company",
+            ein: "",
             description: "",
             phone: "",
             email: "",
@@ -120,6 +121,26 @@ export function CreateCompanyForm() {
                 </select>
                 {errors.entityType && (
                     <p className="text-sm text-destructive">{errors.entityType.message}</p>
+                )}
+            </div>
+
+            {/* EIN */}
+            <div className="space-y-2">
+                <label htmlFor="ein" className="text-sm font-medium">
+                    EIN (Employer Identification Number)
+                </label>
+                <input
+                    id="ein"
+                    {...register("ein")}
+                    placeholder="XX-XXXXXXX"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    disabled={isPending}
+                />
+                <p className="text-xs text-muted-foreground">
+                    Recommended for companies. Format: XX-XXXXXXX
+                </p>
+                {errors.ein && (
+                    <p className="text-sm text-destructive">{errors.ein.message}</p>
                 )}
             </div>
 

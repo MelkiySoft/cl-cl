@@ -16,6 +16,11 @@ const baseCompanyFields = {
         .optional()
         .transform((v) => (v === "" ? undefined : v)),
     entityType: z.enum(["company", "individual"]),
+    ein: z
+        .string()
+        .max(20)
+        .optional()
+        .transform((v) => (v === "" ? undefined : v)),
     description: z
         .string()
         .max(5000)

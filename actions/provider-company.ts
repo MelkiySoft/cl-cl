@@ -93,6 +93,7 @@ export async function createCompany(
                 email: data.email ?? null,
                 website: data.website ?? null,
                 entityType: data.entityType,
+                ein: data.ein ?? null,
                 status: false,
                 moderationStatus: "pending",
             })
@@ -163,6 +164,7 @@ export async function updateCompany(
                 email: data.email ?? null,
                 website: data.website ?? null,
                 entityType: data.entityType,
+                ein: data.ein ?? null,
                 image: data.image ?? null,
                 updatedAt: new Date(),
             })

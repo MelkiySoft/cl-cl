@@ -28,6 +28,7 @@ type Company = {
     email: string | null;
     website: string | null;
     entityType: string;
+    ein: string | null;
     image: string | null;
     moderationStatus: string;
     status: boolean;
@@ -73,6 +74,7 @@ export function EditCompanyForm({
             legalName: company.legalName,
             dbaName: company.dbaName ?? "",
             entityType: company.entityType as "company" | "individual",
+            ein: company.ein ?? "",
             description: company.description ?? "",
             phone: company.phone ?? "",
             email: company.email ?? "",
@@ -296,6 +298,26 @@ export function EditCompanyForm({
                 </select>
                 {errors.entityType && (
                     <p className="text-sm text-destructive">{errors.entityType.message}</p>
+                )}
+            </div>
+
+            {/* EIN */}
+            <div className="space-y-2">
+                <label htmlFor="ein" className="text-sm font-medium">
+                    EIN (Employer Identification Number)
+                </label>
+                <input
+                    id="ein"
+                    {...register("ein")}
+                    placeholder="XX-XXXXXXX"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    disabled={isPending}
+                />
+                <p className="text-xs text-muted-foreground">
+                    Recommended for companies. Format: XX-XXXXXXX
+                </p>
+                {errors.ein && (
+                    <p className="text-sm text-destructive">{errors.ein.message}</p>
                 )}
             </div>
 

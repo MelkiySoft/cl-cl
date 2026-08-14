@@ -231,7 +231,7 @@ export const companies = pgTable("companies", {
     website: text("website"),
 
     // US tax / business identifiers
-    ein: text("ein"), // Employer Identification Number (XX-XXXXXXX)
+    ein: text("ein"), // Employer Identification Number
     businessStructure: text("business_structure").$type<BusinessStructure>(),
 
     yearFounded: integer("year_founded"),

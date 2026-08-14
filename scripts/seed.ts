@@ -17,6 +17,7 @@ import {
     blogCategoryPath,
     blogCategories,
 } from "@/db/schema";
+import { sql } from "drizzle-orm";
 
 import { seedUsers } from "./seed/users";
 import { seedCategories } from "./seed/categories";
@@ -27,7 +28,30 @@ import { seedArticles } from "./seed/articles";
 async function clearDatabase() {
     console.log("→ Clearing tables...");
 
-    await db.delete(articleToCategory);
+    await db.execute(sql`
+    TRUNCATE TABLE
+        
+      article_to_category,
+      articles,
+      blog_category_path,
+      blog_categories,
+        
+      company_to_category,
+      company_images,
+      companies,
+        
+      category_path,
+      categories,
+        
+      verification_tokens,
+      sessions,
+      accounts,
+      users
+        
+    RESTART IDENTITY CASCADE
+  `);
+
+/*    await db.delete(articleToCategory);
     await db.delete(articles);
     await db.delete(blogCategoryPath);
     await db.delete(blogCategories);
@@ -42,7 +66,7 @@ async function clearDatabase() {
     await db.delete(verificationTokens);
     await db.delete(sessions);
     await db.delete(accounts);
-    await db.delete(users);
+    await db.delete(users);*/
 
     console.log("✓ Tables cleared\n");
 }

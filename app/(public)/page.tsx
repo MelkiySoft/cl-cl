@@ -14,18 +14,18 @@ export default function HomePage() {
 
             <CompanyCarousel
                 title="Featured Cleaning Companies"
-                companyIds={[1211, 1213, 1217, 1212, 1215]}
+                companyIds={[5, 8, 2, 3, 1]}
             />
 
             <CompanyCarousel
                 title="Top in New York"
-                companyIds={[1218, 1215, 1210, 1211, 1213]}
+                companyIds={[6, 7, 9, 4, 10]}
                 autoplay
             />
 
             <ArticleCarousel
                 title="Latest Articles"
-                articleIds={[11, 14, 17, 12, 13]}
+                articleIds={[5, 36, 7, 60, 1]}
                 autoplay={{ delay: 1000 }}
             />
 

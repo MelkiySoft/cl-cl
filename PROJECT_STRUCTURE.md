@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-13T11:08:09.997Z
+> Последнее обновление: 2026-08-14T06:43:17.534Z
 
 ```bash
 ├── actions/
@@ -102,6 +102,7 @@
 │   │   │   ├── theme-toggle.tsx
 │   │   │   └── user-nav.tsx
 │   │   ├── article-carousel.tsx
+│   │   ├── carousel-shell.tsx
 │   │   └── company-carousel.tsx
 │   ├── ui/
 │   │   ├── avatar.tsx

@@ -19,12 +19,14 @@ export default function HomePage() {
 
             <CompanyCarousel
                 title="Top in New York"
-                companyIds={[1218, 1215, 1210]}
+                companyIds={[1218, 1215, 1210, 1211, 1213]}
+                autoplay
             />
 
             <ArticleCarousel
                 title="Latest Articles"
-                articleIds={[11, 14, 17, 12]}
+                articleIds={[11, 14, 17, 12, 13]}
+                autoplay={{ delay: 1000 }}
             />
 
         </div>

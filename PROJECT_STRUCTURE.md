@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-17T09:24:02.171Z
+> Последнее обновление: 2026-08-17T10:13:51.197Z
 
 ```bash
 ├── actions/
@@ -73,6 +73,7 @@
 │   │   │   └── sidebar.tsx
 │   │   └── provider/
 │   │       ├── company-categories-fields.tsx
+│   │       ├── company-documents.tsx
 │   │       ├── company-gallery.tsx
 │   │       ├── create-company-form.tsx
 │   │       └── edit-company-form.tsx

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import {
     getCompanyForEdit,
     getCompanyImages,
+    getCompanyDocuments,
 } from "@/actions/provider-company";
 import { EditCompanyForm } from "@/components/dashboard/provider/edit-company-form";
 import { CompanyGallery } from "@/components/dashboard/provider/company-gallery";
@@ -24,9 +25,10 @@ export default async function EditCompanyPage({ params }: Props) {
         notFound();
     }
 
-    const [company, images, leaves, categorySelection] = await Promise.all([
+    const [company, images, documents, leaves, categorySelection] = await Promise.all([
         getCompanyForEdit(companyId),
         getCompanyImages(companyId),
+        getCompanyDocuments(companyId),
         getLeafOptions(),
         getCompanyLeafSelection(companyId),
     ]);
@@ -57,6 +59,7 @@ export default async function EditCompanyPage({ params }: Props) {
             <EditCompanyForm
                 company={company}
                 images={images}
+                documents={documents}
                 leaves={leaves}
                 categorySelection={categorySelection}
             />

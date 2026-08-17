@@ -12,6 +12,8 @@ import { updateCompany } from "@/actions/provider-company";
 import { createUploadUrl } from "@/actions/upload";
 import { CompanyGallery } from "@/components/dashboard/provider/company-gallery";
 import { CompanyCategoriesFields } from "@/components/dashboard/provider/company-categories-fields";
+import { CompanyDocuments } from "@/components/dashboard/provider/company-documents";
+import type { DocumentType } from "@/db/schema";
 import type { LeafOption } from "@/lib/provider-categories";
 import {
     companyFormSchema,
@@ -41,9 +43,21 @@ type GalleryImage = {
     sortOrder: number;
 };
 
+type Doc = {
+    id: number;
+    type: DocumentType;
+    originalName: string;
+    contentType: string;
+    fileSize: number | null;
+    status: string;
+    adminNote?: string | null;
+    uploadedAt: Date | string;
+};
+
 type Props = {
     company: Company;
     images: GalleryImage[];
+    documents: Doc[];
     leaves: LeafOption[];
     categorySelection: {
         mainId: number | null;
@@ -54,6 +68,7 @@ type Props = {
 export function EditCompanyForm({
                                     company,
                                     images,
+                                    documents,
                                     leaves,
                                     categorySelection,
                                 }: Props) {
@@ -232,6 +247,8 @@ export function EditCompanyForm({
             </div>
 
             <CompanyGallery companyId={company.id} images={images} />
+
+            <CompanyDocuments companyId={company.id} documents={documents} />
 
             {/* Names */}
             <div className="grid gap-6 sm:grid-cols-2">

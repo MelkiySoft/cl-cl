@@ -48,14 +48,6 @@ export function CompanyCategoriesFields({
 
     return (
         <div className="space-y-4">
-            <div>
-                <h3 className="text-sm font-medium">Categories</h3>
-                <p className="text-xs text-muted-foreground">
-                    Choose one main specialization and up to two related categories from
-                    the same branch.
-                </p>
-            </div>
-
             <div className="space-y-2">
                 <label htmlFor="mainCategoryId" className="text-sm font-medium">
                     Main category

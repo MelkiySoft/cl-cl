@@ -160,14 +160,6 @@ export function CompanyDocuments({
 
     return (
         <div className="space-y-4">
-            <div>
-                <h3 className="text-sm font-medium">Verification documents</h3>
-                <p className="text-xs text-muted-foreground">
-                    Upload insurance, bond or license documents. Files are private
-                    and visible only to you and admins.
-                </p>
-            </div>
-
             <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-1">
                     <label htmlFor="doc-type" className="text-xs font-medium">

@@ -38,7 +38,7 @@ export default async function EditCompanyPage({ params }: Props) {
     }
 
     return (
-        <div className="space-y-8 max-w-2xl">
+        <div className="space-y-8 max-w-7xl">
             <div>
                 <Link
                     href="/provider/company"

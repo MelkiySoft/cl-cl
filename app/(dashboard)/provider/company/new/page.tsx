@@ -4,7 +4,7 @@ import { CreateCompanyForm } from "@/components/dashboard/provider/create-compan
 
 export default function NewCompanyPage() {
     return (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-6 max-w-7xl">
             <div>
                 <Link
                     href="/provider/company"

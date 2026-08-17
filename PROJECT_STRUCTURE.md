@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-14T11:31:23.043Z
+> Последнее обновление: 2026-08-17T08:15:43.001Z
 
 ```bash
 ├── actions/
@@ -127,7 +127,7 @@
 │   ├── meta/
 │   │   ├── _journal.json
 │   │   └── 0000_snapshot.json
-│   └── 0000_demonic_moondragon.sql
+│   └── 0000_little_slayback.sql
 ├── exports/
 │   └── geo_usa_full.xml
 ├── hooks/

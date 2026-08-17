@@ -178,6 +178,7 @@ export const categoryPathRelations = relations(categoryPath, ({ one }) => ({
 // Companies
 // ============================================================
 
+// companies
 export const entityTypeEnum = ["individual", "company"] as const;
 export type EntityType = (typeof entityTypeEnum)[number];
 export const businessStructureEnum = [
@@ -269,6 +270,8 @@ export const companies = pgTable("companies", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     approvedAt: timestamp("approved_at", { mode: "date" }),
 });
+
+// company_images
 export const companyImages = pgTable("company_images",{
     id: serial("id").primaryKey(),
     companyId: integer("company_id")
@@ -278,12 +281,51 @@ export const companyImages = pgTable("company_images",{
     sortOrder: integer("sort_order").notNull().default(0),
 });
 
+// company_documents
+export const documentTypeEnum = ["insurance", "bond", "license", "other"] as const;
+export type DocumentType = (typeof documentTypeEnum)[number];
+
+export const documentStatusEnum = ["pending", "approved", "rejected"] as const;
+export type DocumentStatus = (typeof documentStatusEnum)[number];
+
+export const companyDocuments = pgTable("company_documents", {
+    id: serial("id").primaryKey(),
+
+    companyId: integer("company_id")
+        .notNull()
+        .references(() => companies.id, { onDelete: "cascade" }),
+
+    type: text("type").$type<DocumentType>().notNull(),
+
+    // ключ в приватном бакете (НЕ публичный URL)
+    fileKey: text("file_key").notNull(),
+
+    originalName: text("original_name").notNull(),
+    contentType: text("content_type").notNull(),
+    fileSize: integer("file_size"), // байты
+
+    status: text("status")
+        .$type<DocumentStatus>()
+        .notNull()
+        .default("pending"),
+
+    adminNote: text("admin_note"),
+
+    uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+    reviewedAt: timestamp("reviewed_at", { mode: "date" }),
+    reviewedBy: text("reviewed_by").references(() => users.id, {
+        onDelete: "set null",
+    }),
+});
+
+// Relations
 export const companiesRelations = relations(companies, ({ one, many }) => ({
     owner: one(users, {
         fields: [companies.userId],
         references: [users.id],
     }),
     images: many(companyImages),
+    documents: many(companyDocuments),
     categories: many(companyToCategory),
 }));
 export const companyImagesRelations = relations(companyImages, ({ one }) => ({
@@ -300,6 +342,16 @@ export const companyToCategoryRelations = relations(companyToCategory, ({ one })
     category: one(categories, {
         fields: [companyToCategory.categoryId],
         references: [categories.id],
+    }),
+}));
+export const companyDocumentsRelations = relations(companyDocuments, ({ one }) => ({
+    company: one(companies, {
+        fields: [companyDocuments.companyId],
+        references: [companies.id],
+    }),
+    reviewer: one(users, {
+        fields: [companyDocuments.reviewedBy],
+        references: [users.id],
     }),
 }));
 

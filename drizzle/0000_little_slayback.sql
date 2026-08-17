@@ -143,6 +143,21 @@ CREATE TABLE "companies" (
 	CONSTRAINT "companies_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
+CREATE TABLE "company_documents" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"company_id" integer NOT NULL,
+	"type" text NOT NULL,
+	"file_key" text NOT NULL,
+	"original_name" text NOT NULL,
+	"content_type" text NOT NULL,
+	"file_size" integer,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"admin_note" text,
+	"uploaded_at" timestamp DEFAULT now() NOT NULL,
+	"reviewed_at" timestamp,
+	"reviewed_by" text
+);
+--> statement-breakpoint
 CREATE TABLE "company_images" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"company_id" integer NOT NULL,
@@ -227,6 +242,8 @@ ALTER TABLE "blog_category_path" ADD CONSTRAINT "blog_category_path_path_id_blog
 ALTER TABLE "category_path" ADD CONSTRAINT "category_path_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "category_path" ADD CONSTRAINT "category_path_path_id_categories_id_fk" FOREIGN KEY ("path_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "companies" ADD CONSTRAINT "companies_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "company_documents" ADD CONSTRAINT "company_documents_company_id_companies_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."companies"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "company_documents" ADD CONSTRAINT "company_documents_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "company_images" ADD CONSTRAINT "company_images_company_id_companies_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."companies"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "company_to_category" ADD CONSTRAINT "company_to_category_company_id_companies_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."companies"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "company_to_category" ADD CONSTRAINT "company_to_category_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

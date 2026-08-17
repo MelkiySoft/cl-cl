@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-17T08:15:43.001Z
+> Последнее обновление: 2026-08-17T08:33:11.483Z
 
 ```bash
 ├── actions/
@@ -196,7 +196,8 @@
 ├── PROJECT_STRUCTURE.md
 ├── proxy.ts
 ├── README.md
-└── tsconfig.json
+├── tsconfig.json
+└── vercel.json
 ```
 
 ---

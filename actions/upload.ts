@@ -17,7 +17,9 @@ type CreateUploadUrlInput = {
     folder: "companies" | "categories" | "users";
     entityId?: string | number;
 };
-export async function createUploadUrl(input: CreateUploadUrlInput) {
+export async function createUploadUrl(
+    input: CreateUploadUrlInput
+){
     const session = await auth();
     if (!session?.user) {
         return { error: "Unauthorized" as const };
@@ -47,13 +49,17 @@ type CreateDocumentUploadUrlInput = {
     companyId: number;
     type: DocumentType;
 };
+
 const ALLOWED_DOCUMENT_TYPES = [
     "application/pdf",
     "image/jpeg",
     "image/png",
     "image/webp",
 ];
-export async function createDocumentUploadUrl(    input: CreateDocumentUploadUrlInput) {
+
+export async function createDocumentUploadUrl(
+    input: CreateDocumentUploadUrlInput
+) {
     const session = await auth();
     if (!session?.user) {
         return { error: "Unauthorized" as const };

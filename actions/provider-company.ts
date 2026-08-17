@@ -399,6 +399,7 @@ export type DocumentState = {
         uploadedAt: Date;
     };
 };
+
 /** Список документов компании (только владелец или admin) */
 export async function getCompanyDocuments(companyId: number) {
     const session = await auth();

@@ -5,10 +5,23 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { companies, companyImages, companyToCategory } from "@/db/schema";
+import {
+    companies,
+    companyImages,
+    companyToCategory,
+    companyDocuments,
+} from "@/db/schema";
+import {
+    getPrivateDownloadUrl,
+    deletePrivateFile,
+} from "@/lib/r2";
 import { slugify } from "@/lib/utils";
-import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
 
+import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
+import type { DocumentType } from "@/db/schema";
+
+
+// ===================== COMPANIES =====================
 export type CompanyFormState = {
     error?: string;
     success?: boolean;
@@ -45,9 +58,7 @@ export async function getMyCompanies() {
 
 
 /** Создание компании */
-export async function createCompany(
-    data: CompanyCreateValues
-): Promise<CompanyFormState> {
+export async function createCompany(    data: CompanyCreateValues): Promise<CompanyFormState> {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Unauthorized" };
@@ -126,9 +137,7 @@ export async function getCompanyForEdit(id: number) {
 }
 
 /** Обновление компании */
-export async function updateCompany(
-    data: CompanyFormValues
-): Promise<CompanyFormState> {
+export async function updateCompany(    data: CompanyFormValues): Promise<CompanyFormState> {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Unauthorized" };
@@ -244,6 +253,8 @@ export async function updateCompany(
     }
 }
 
+// ===================== IMAGES =====================
+
 /** Галерея компании (только своя) */
 export async function getCompanyImages(companyId: number) {
     const session = await auth();
@@ -275,10 +286,7 @@ export type GalleryState = {
 };
 
 /** Добавить фото в галерею */
-export async function addCompanyImage(
-    companyId: number,
-    imageUrl: string
-): Promise<GalleryState> {
+export async function addCompanyImage( companyId: number, imageUrl: string): Promise<GalleryState> {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Unauthorized" };
@@ -337,10 +345,7 @@ export async function addCompanyImage(
 }
 
 /** Удалить фото из галереи */
-export async function deleteCompanyImage(
-    companyId: number,
-    imageId: number
-): Promise<GalleryState> {
+export async function deleteCompanyImage( companyId: number, imageId: number ): Promise<GalleryState> {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Unauthorized" };
@@ -376,5 +381,205 @@ export async function deleteCompanyImage(
     } catch (err) {
         console.error("deleteCompanyImage error:", err);
         return { error: "Failed to delete image" };
+    }
+}
+
+// ===================== DOCUMENTS =====================
+
+export type DocumentState = {
+    error?: string;
+    success?: boolean;
+    document?: {
+        id: number;
+        type: DocumentType;
+        originalName: string;
+        contentType: string;
+        fileSize: number | null;
+        status: string;
+        uploadedAt: Date;
+    };
+};
+/** Список документов компании (только владелец или admin) */
+export async function getCompanyDocuments(companyId: number) {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    const company = await db.query.companies.findFirst({
+        where:
+            session.user.role === "admin"
+                ? eq(companies.id, companyId)
+                : and(
+                    eq(companies.id, companyId),
+                    eq(companies.userId, session.user.id)
+                ),
+        columns: { id: true },
+    });
+    if (!company) return [];
+
+    return db.query.companyDocuments.findMany({
+        where: eq(companyDocuments.companyId, companyId),
+        orderBy: [desc(companyDocuments.uploadedAt)],
+        columns: {
+            id: true,
+            type: true,
+            originalName: true,
+            contentType: true,
+            fileSize: true,
+            status: true,
+            adminNote: true,
+            uploadedAt: true,
+            reviewedAt: true,
+        },
+    });
+}
+
+/** Сохранить документ после успешной загрузки в R2 */
+export async function saveCompanyDocument(input: {
+    companyId: number;
+    type: DocumentType;
+    fileKey: string;
+    originalName: string;
+    contentType: string;
+    fileSize?: number;
+}): Promise<DocumentState> {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Unauthorized" };
+    }
+
+    const company = await db.query.companies.findFirst({
+        where:
+            session.user.role === "admin"
+                ? eq(companies.id, input.companyId)
+                : and(
+                    eq(companies.id, input.companyId),
+                    eq(companies.userId, session.user.id)
+                ),
+        columns: { id: true },
+    });
+    if (!company) {
+        return { error: "Company not found" };
+    }
+
+    try {
+        const [row] = await db
+            .insert(companyDocuments)
+            .values({
+                companyId: input.companyId,
+                type: input.type,
+                fileKey: input.fileKey,
+                originalName: input.originalName,
+                contentType: input.contentType,
+                fileSize: input.fileSize ?? null,
+                status: "pending",
+            })
+            .returning({
+                id: companyDocuments.id,
+                type: companyDocuments.type,
+                originalName: companyDocuments.originalName,
+                contentType: companyDocuments.contentType,
+                fileSize: companyDocuments.fileSize,
+                status: companyDocuments.status,
+                uploadedAt: companyDocuments.uploadedAt,
+            });
+
+        revalidatePath(`/provider/company/${input.companyId}`);
+        return { success: true, document: row };
+    } catch (err) {
+        console.error("saveCompanyDocument error:", err);
+        return { error: "Failed to save document" };
+    }
+}
+
+/** Временная ссылка на скачивание (owner или admin) */
+export async function getDocumentDownloadUrl(
+    companyId: number,
+    documentId: number
+): Promise<{ url?: string; error?: string }> {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Unauthorized" };
+    }
+
+    const company = await db.query.companies.findFirst({
+        where:
+            session.user.role === "admin"
+                ? eq(companies.id, companyId)
+                : and(
+                    eq(companies.id, companyId),
+                    eq(companies.userId, session.user.id)
+                ),
+        columns: { id: true },
+    });
+    if (!company) {
+        return { error: "Company not found" };
+    }
+
+    const doc = await db.query.companyDocuments.findFirst({
+        where: and(
+            eq(companyDocuments.id, documentId),
+            eq(companyDocuments.companyId, companyId)
+        ),
+        columns: { fileKey: true },
+    });
+    if (!doc) {
+        return { error: "Document not found" };
+    }
+
+    try {
+        const url = await getPrivateDownloadUrl(doc.fileKey, 60 * 10);
+        return { url };
+    } catch (err) {
+        console.error("getDocumentDownloadUrl error:", err);
+        return { error: "Failed to generate download URL" };
+    }
+}
+
+/** Удалить документ (файл из R2 + запись из БД) */
+export async function deleteCompanyDocument(
+    companyId: number,
+    documentId: number
+): Promise<DocumentState> {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Unauthorized" };
+    }
+
+    const company = await db.query.companies.findFirst({
+        where:
+            session.user.role === "admin"
+                ? eq(companies.id, companyId)
+                : and(
+                    eq(companies.id, companyId),
+                    eq(companies.userId, session.user.id)
+                ),
+        columns: { id: true },
+    });
+    if (!company) {
+        return { error: "Company not found" };
+    }
+
+    const doc = await db.query.companyDocuments.findFirst({
+        where: and(
+            eq(companyDocuments.id, documentId),
+            eq(companyDocuments.companyId, companyId)
+        ),
+        columns: { id: true, fileKey: true },
+    });
+    if (!doc) {
+        return { error: "Document not found" };
+    }
+
+    try {
+        await deletePrivateFile(doc.fileKey);
+        await db
+            .delete(companyDocuments)
+            .where(eq(companyDocuments.id, documentId));
+
+        revalidatePath(`/provider/company/${companyId}`);
+        return { success: true };
+    } catch (err) {
+        console.error("deleteCompanyDocument error:", err);
+        return { error: "Failed to delete document" };
     }
 }

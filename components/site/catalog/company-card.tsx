@@ -14,7 +14,7 @@ export function CompanyCard({ company, priority = false }: CompanyCardProps) {
     const location = [company.city, company.state].filter(Boolean).join(", ")
 
     return (
-        <Link href={`/company/${company.slug}`} prefetch={false} className="group block h-full">
+        <Link href={`/company/${company.slug}`} className="group block h-full">
             <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
                 {/* Image */}
                 <div className="relative aspect-[16/10] bg-muted overflow-hidden">

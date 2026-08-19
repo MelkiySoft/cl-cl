@@ -14,15 +14,32 @@ import {
     Calendar,
     Building2,
 } from "lucide-react"
+import { and, eq } from "drizzle-orm"
 import { CompanyGallery } from "@/components/site/company/company-gallery"
 import { getCompanyBySlug } from "@/lib/companies"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { CompanyMapLoader } from "@/components/site/company/company-map-loader"
+import { db } from "@/db"
+import { companies } from "@/db/schema"
+
+export const revalidate = 3600 // 1 час
 
 type PageProps = {
     params: Promise<{ slug: string }>
+}
+
+export async function generateStaticParams() {
+    const rows = await db.query.companies.findMany({
+        where: and(
+            eq(companies.status, true),
+            eq(companies.moderationStatus, "approved")
+        ),
+        columns: { slug: true },
+    })
+
+    return rows.map((c) => ({ slug: c.slug }))
 }
 
 export async function generateMetadata({

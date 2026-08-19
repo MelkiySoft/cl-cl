@@ -13,6 +13,8 @@ import { CompanyGrid } from "@/components/site/catalog/company-grid"
 import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
 import { CatalogPagination } from "@/components/site/catalog/catalog-pagination"
 
+export const revalidate = 3600
+
 type PageProps = {
     params: Promise<{ path?: string[] }>
     searchParams: Promise<{

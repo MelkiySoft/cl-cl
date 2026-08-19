@@ -6,38 +6,25 @@ import {
     getCategoryByPath,
     getCategoryTree,
     getCompaniesByCategoryId,
+    type CompanySort,
 } from "@/lib/categories"
 import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
 import { CompanyGrid } from "@/components/site/catalog/company-grid"
 import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
 import { CatalogPagination } from "@/components/site/catalog/catalog-pagination"
 
-export const revalidate = 3600
-
 type PageProps = {
     params: Promise<{ path?: string[] }>
+    searchParams: Promise<{
+        sort?: string
+        limit?: string
+        page?: string
+    }>
 }
 
-export async function generateStaticParams() {
-    const tree = await getCategoryTree()
-
-    const paths: { path: string[] }[] = [{ path: [] }] // /catalog
-
-    function walk(nodes: Awaited<ReturnType<typeof getCategoryTree>>, parents: string[] = []) {
-        for (const node of nodes) {
-            const current = [...parents, node.slug]
-            paths.push({ path: current })
-            if (node.children.length > 0) {
-                walk(node.children, current)
-            }
-        }
-    }
-
-    walk(tree)
-    return paths
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+                                           params,
+                                       }: PageProps): Promise<Metadata> {
     const { path } = await params
     const slugs = path ?? []
 
@@ -60,14 +47,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 }
 
-export default async function CatalogPage({ params }: PageProps) {
+export default async function CatalogFilterPage({
+                                                    params,
+                                                    searchParams,
+                                                }: PageProps) {
     const { path } = await params
+    const sp = await searchParams
     const slugs = path ?? []
 
-    // Дефолтные значения (первая страница, стандартная сортировка)
-    const sort = "sort_order"
-    const limit = 15
-    const page = 1
+    const sort = (sp.sort as CompanySort) || "sort_order"
+    const limit = Number(sp.limit) || 15
+    const page = Number(sp.page) || 1
 
     const [tree, category] = await Promise.all([
         getCategoryTree(),

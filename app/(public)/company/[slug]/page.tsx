@@ -30,6 +30,7 @@ type PageProps = {
     params: Promise<{ slug: string }>
 }
 
+/* Кеширование от CDN vercel.  x-vercel-cache: HIT */
 export async function generateStaticParams() {
     const rows = await db.query.companies.findMany({
         where: and(

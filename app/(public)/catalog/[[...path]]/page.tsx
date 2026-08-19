@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-
 import {
     getCategoryByPath,
     getCategoryTree,
@@ -11,6 +10,7 @@ import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
 import { CompanyGrid } from "@/components/site/catalog/company-grid"
 import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
 import { CatalogPagination } from "@/components/site/catalog/catalog-pagination"
+import { Suspense } from "react"
 
 export const revalidate = 3600
 
@@ -134,10 +134,17 @@ export default async function CatalogPage({ params }: PageProps) {
                 <CategorySidebar tree={tree} currentSlug={currentSlug} />
 
                 <div className="flex-1 min-w-0">
-                    <CatalogToolbar total={total} />
+                    <Suspense fallback={null}>
+                        <CatalogToolbar total={total} />
+                    </Suspense>
+
                     <CompanyGrid companies={companies} />
-                    <CatalogPagination page={page} totalPages={totalPages} />
+
+                    <Suspense fallback={null}>
+                        <CatalogPagination page={page} totalPages={totalPages} />
+                    </Suspense>
                 </div>
+
             </div>
         </div>
     )

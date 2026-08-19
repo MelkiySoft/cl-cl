@@ -18,6 +18,11 @@ type PageProps = {
     params: Promise<{ path?: string[] }>
 }
 
+export async function generateStaticParams() {
+    // Пока только корень /catalog
+    return [{ path: undefined }]
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { path } = await params
     const slugs = path ?? []

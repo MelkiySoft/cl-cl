@@ -18,37 +18,6 @@ type PageProps = {
     params: Promise<{ path?: string[] }>
 }
 
-export async function generateStaticParams() {
-    try {
-        const tree = await getCategoryTree()
-
-        const paths: { path?: string[] }[] = [
-            // корень /catalog — path должен быть undefined
-            { path: undefined },
-        ]
-
-        function walk(
-            nodes: Awaited<ReturnType<typeof getCategoryTree>>,
-            parents: string[] = []
-        ) {
-            for (const node of nodes) {
-                const current = [...parents, node.slug]
-                paths.push({ path: current })
-                if (node.children.length > 0) {
-                    walk(node.children, current)
-                }
-            }
-        }
-
-        walk(tree)
-        return paths
-    } catch (error) {
-        console.error("generateStaticParams catalog error:", error)
-        // Чтобы билд не падал — возвращаем хотя бы корень
-        return [{ path: undefined }]
-    }
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { path } = await params
     const slugs = path ?? []

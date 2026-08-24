@@ -90,6 +90,7 @@ export default async function CompanyPage({ params }: PageProps) {
 
     return (
         <div className="container mx-auto px-4 sm:px-6 py-8">
+
             {/* Breadcrumbs */}
             <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                 <Link href="/" className="hover:text-foreground transition-colors">
@@ -102,17 +103,35 @@ export default async function CompanyPage({ params }: PageProps) {
                 >
                     Catalog
                 </Link>
-                {company.categories[0] && (
-                    <>
-                        <span>/</span>
-                        <Link
-                            href={`/catalog/${company.categories[0].slug}`}
-                            className="hover:text-foreground transition-colors"
-                        >
-                            {company.categories[0].name}
-                        </Link>
-                    </>
-                )}
+
+                {(() => {
+                    const mainCategory =
+                        company.categories.find((c) => c.isMain) ?? company.categories[0]
+
+                    if (!mainCategory) return null
+
+                    return mainCategory.path.map((crumb, i) => {
+                        const href =
+                            "/catalog/" +
+                            mainCategory.path
+                                .slice(0, i + 1)
+                                .map((c) => c.slug)
+                                .join("/")
+
+                        return (
+                            <span key={crumb.id} className="flex items-center gap-1.5">
+                    <span>/</span>
+                    <Link
+                        href={href}
+                        className="hover:text-foreground transition-colors"
+                    >
+                        {crumb.name}
+                    </Link>
+                </span>
+                        )
+                    })
+                })()}
+
                 <span>/</span>
                 <span className="text-foreground font-medium">{company.name}</span>
             </nav>

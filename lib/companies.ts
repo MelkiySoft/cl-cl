@@ -6,6 +6,7 @@ import {
     companyImages,
     companyToCategory,
     categories,
+    categoryPath,
 } from "@/db/schema"
 import type { CatalogCompany } from "@/lib/categories"
 
@@ -39,7 +40,13 @@ export type CompanyDetail = {
     longitude: string | null
     viewed: number
     images: { id: number; image: string; sortOrder: number }[]
-    categories: { id: number; name: string; slug: string }[]
+    categories: {
+        id: number
+        name: string
+        slug: string
+        isMain: boolean
+        path: { id: number; name: string; slug: string }[]
+    }[]
 }
 
 export const getCompanyBySlug = cache(
@@ -60,6 +67,9 @@ export const getCompanyBySlug = cache(
                     },
                 },
                 categories: {
+                    columns: {
+                        isMain: true,
+                    },
                     with: {
                         category: {
                             columns: {
@@ -76,14 +86,59 @@ export const getCompanyBySlug = cache(
 
         if (!company) return null
 
-        const cats = (company.categories ?? [])
-            .map((link) => link.category)
-            .filter((c) => c && c.status)
-            .map((c) => ({
-                id: c.id,
-                name: c.name,
-                slug: c.slug,
-            }))
+        const links = (company.categories ?? []).filter(
+            (link) => link.category && link.category.status
+        )
+
+        const categoryIds = links.map((link) => link.category.id)
+
+// Полные пути для всех категорий компании
+        const pathRows =
+            categoryIds.length > 0
+                ? await db.query.categoryPath.findMany({
+                    where: inArray(categoryPath.categoryId, categoryIds),
+                    with: {
+                        path: {
+                            columns: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                            },
+                        },
+                    },
+                    orderBy: [asc(categoryPath.level)],
+                })
+                : []
+
+        const pathByCategoryId = new Map<
+            number,
+            { id: number; name: string; slug: string }[]
+        >()
+
+        for (const row of pathRows) {
+            if (!row.path) continue
+            const list = pathByCategoryId.get(row.categoryId) ?? []
+            list.push({
+                id: row.path.id,
+                name: row.path.name,
+                slug: row.path.slug,
+            })
+            pathByCategoryId.set(row.categoryId, list)
+        }
+
+        const cats = links.map((link) => ({
+            id: link.category.id,
+            name: link.category.name,
+            slug: link.category.slug,
+            isMain: link.isMain,
+            path: pathByCategoryId.get(link.category.id) ?? [
+                {
+                    id: link.category.id,
+                    name: link.category.name,
+                    slug: link.category.slug,
+                },
+            ],
+        }))
 
         return {
             id: company.id,

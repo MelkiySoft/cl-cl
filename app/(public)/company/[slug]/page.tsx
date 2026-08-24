@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import {
@@ -93,16 +93,16 @@ export default async function CompanyPage({ params }: PageProps) {
 
             {/* Breadcrumbs */}
             <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                <Link href="/" className="hover:text-foreground transition-colors">
+                <AppLink href="/" className="hover:text-foreground transition-colors">
                     Home
-                </Link>
+                </AppLink>
                 <span>/</span>
-                <Link
+                <AppLink
                     href="/catalog"
                     className="hover:text-foreground transition-colors"
                 >
                     Catalog
-                </Link>
+                </AppLink>
 
                 {(() => {
                     const mainCategory =
@@ -121,12 +121,12 @@ export default async function CompanyPage({ params }: PageProps) {
                         return (
                             <span key={crumb.id} className="flex items-center gap-1.5">
                     <span>/</span>
-                    <Link
+                    <AppLink
                         href={href}
                         className="hover:text-foreground transition-colors"
                     >
                         {crumb.name}
-                    </Link>
+                    </AppLink>
                 </span>
                         )
                     })
@@ -233,13 +233,13 @@ export default async function CompanyPage({ params }: PageProps) {
                             <h2 className="text-lg font-semibold mb-3">Services</h2>
                             <div className="flex flex-wrap gap-2">
                                 {company.categories.map((cat) => (
-                                    <Link
+                                    <AppLink
                                         key={cat.id}
                                         href={`/catalog/${cat.slug}`}
                                         className="rounded-full border px-3 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                                     >
                                         {cat.name}
-                                    </Link>
+                                    </AppLink>
                                 ))}
                             </div>
                         </section>

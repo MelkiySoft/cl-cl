@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link"
 import { signOut } from "next-auth/react";
 import { LogOut, Menu, User } from "lucide-react";
 import { useState } from "react";
@@ -64,7 +64,7 @@ export function DashboardHeader({ user }: HeaderProps) {
                     <SheetContent side="left" className="w-72 p-0">
                         <SheetHeader className="border-b px-4 py-3">
                             <SheetTitle className="text-left">
-                                <Link
+                                <AppLink
                                     href="/"
                                     className="flex items-center gap-2 font-semibold"
                                     onClick={() => setOpen(false)}
@@ -75,7 +75,7 @@ export function DashboardHeader({ user }: HeaderProps) {
                                     <span>
                                         cl-<span className="text-primary">cl</span>
                                     </span>
-                                </Link>
+                                </AppLink>
                             </SheetTitle>
                         </SheetHeader>
 
@@ -130,7 +130,7 @@ export function DashboardHeader({ user }: HeaderProps) {
                     <DropdownMenuSeparator />
 
                     <DropdownMenuGroup>
-                        <DropdownMenuItem render={<Link href="/account" />}>
+                        <DropdownMenuItem render={<AppLink href="/account" />}>
                             <User className="mr-2 size-4" />
                             Account
                         </DropdownMenuItem>

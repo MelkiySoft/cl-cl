@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -40,13 +40,13 @@ export function CatalogPagination({ page, totalPages }: CatalogPaginationProps) 
         <nav className="mt-10 flex items-center justify-center gap-1">
             {/* Prev */}
             {page > 1 ? (
-                <Link
+                <AppLink
                     href={buildHref(page - 1)}
                     className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-9")}
                     aria-label="Previous page"
                 >
                     <ChevronLeft className="size-4" />
-                </Link>
+                </AppLink>
             ) : (
                 <span
                     className={cn(
@@ -61,7 +61,7 @@ export function CatalogPagination({ page, totalPages }: CatalogPaginationProps) 
             {/* First page + ellipsis */}
             {pages[0] > 1 && (
                 <>
-                    <Link
+                    <AppLink
                         href={buildHref(1)}
                         className={cn(
                             buttonVariants({ variant: "outline", size: "icon" }),
@@ -69,7 +69,7 @@ export function CatalogPagination({ page, totalPages }: CatalogPaginationProps) 
                         )}
                     >
                         1
-                    </Link>
+                    </AppLink>
                     {pages[0] > 2 && (
                         <span className="px-1 text-muted-foreground">…</span>
                     )}
@@ -78,7 +78,7 @@ export function CatalogPagination({ page, totalPages }: CatalogPaginationProps) 
 
             {/* Page numbers */}
             {pages.map((p) => (
-                <Link
+                <AppLink
                     key={p}
                     href={buildHref(p)}
                     className={cn(
@@ -90,7 +90,7 @@ export function CatalogPagination({ page, totalPages }: CatalogPaginationProps) 
                     )}
                 >
                     {p}
-                </Link>
+                </AppLink>
             ))}
 
             {/* Last page + ellipsis */}
@@ -99,7 +99,7 @@ export function CatalogPagination({ page, totalPages }: CatalogPaginationProps) 
                     {pages[pages.length - 1] < totalPages - 1 && (
                         <span className="px-1 text-muted-foreground">…</span>
                     )}
-                    <Link
+                    <AppLink
                         href={buildHref(totalPages)}
                         className={cn(
                             buttonVariants({ variant: "outline", size: "icon" }),
@@ -107,19 +107,19 @@ export function CatalogPagination({ page, totalPages }: CatalogPaginationProps) 
                         )}
                     >
                         {totalPages}
-                    </Link>
+                    </AppLink>
                 </>
             )}
 
             {/* Next */}
             {page < totalPages ? (
-                <Link
+                <AppLink
                     href={buildHref(page + 1)}
                     className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-9")}
                     aria-label="Next page"
                 >
                     <ChevronRight className="size-4" />
-                </Link>
+                </AppLink>
             ) : (
                 <span
                     className={cn(

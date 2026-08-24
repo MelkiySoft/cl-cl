@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link"
 import { register, type AuthState } from "@/actions/auth";
 
 const initialState: AuthState = {};
@@ -76,9 +76,9 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-muted-foreground">
                 Уже есть аккаунт?{" "}
-                <Link href="/login" className="underline underline-offset-4">
+                <AppLink href="/login" className="underline underline-offset-4">
                     Войти
-                </Link>
+                </AppLink>
             </p>
         </div>
     );

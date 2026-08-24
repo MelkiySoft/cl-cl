@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { Calendar, Eye, User } from "lucide-react"
@@ -52,25 +52,25 @@ export default async function ArticlePage({ params }: PageProps) {
         <div className="container mx-auto px-4 sm:px-6 py-8">
             {/* Breadcrumbs */}
             <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                <Link href="/" className="hover:text-foreground transition-colors">
+                <AppLink href="/" className="hover:text-foreground transition-colors">
                     Home
-                </Link>
+                </AppLink>
                 <span>/</span>
-                <Link
+                <AppLink
                     href="/blog"
                     className="hover:text-foreground transition-colors"
                 >
                     Blog
-                </Link>
+                </AppLink>
                 {article.categories[0] && (
                     <>
                         <span>/</span>
-                        <Link
+                        <AppLink
                             href={`/blog/${article.categories[0].slug}`}
                             className="hover:text-foreground transition-colors"
                         >
                             {article.categories[0].name}
-                        </Link>
+                        </AppLink>
                     </>
                 )}
                 <span>/</span>
@@ -147,13 +147,13 @@ export default async function ArticlePage({ params }: PageProps) {
                             </h2>
                             <div className="flex flex-wrap gap-2">
                                 {article.categories.map((cat) => (
-                                    <Link
+                                    <AppLink
                                         key={cat.id}
                                         href={`/blog/${cat.slug}`}
                                         className="rounded-full border px-3 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                                     >
                                         {cat.name}
-                                    </Link>
+                                    </AppLink>
                                 ))}
                             </div>
                         </div>

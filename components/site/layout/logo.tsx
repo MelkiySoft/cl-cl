@@ -1,8 +1,8 @@
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 
 export function Logo() {
     return (
-        <Link
+        <AppLink
             href="/"
             className="flex items-center gap-2 font-bold text-xl tracking-tight text-foreground hover:opacity-90 transition-opacity"
         >
@@ -12,6 +12,6 @@ export function Logo() {
             <span className="hidden sm:inline-block">
         cl-<span className="text-primary">cl</span>
       </span>
-        </Link>
+        </AppLink>
     )
 }

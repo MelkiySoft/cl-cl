@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import { useSession, signOut } from "next-auth/react"
 import { LayoutDashboard, LogOut, User } from "lucide-react"
 
@@ -40,18 +40,18 @@ export function UserNav() {
     if (!session?.user) {
         return (
             <div className="flex items-center gap-2">
-                <Link
+                <AppLink
                     href="/login"
                     className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
                 >
                     Log in
-                </Link>
-                <Link
+                </AppLink>
+                <AppLink
                     href="/register"
                     className={cn(buttonVariants({ size: "sm" }))}
                 >
                     Sign up
-                </Link>
+                </AppLink>
             </div>
         )
     }
@@ -96,12 +96,12 @@ export function UserNav() {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuGroup>
-                    <DropdownMenuItem render={<Link href={getDashboardPath(user.role)} />}>
+                    <DropdownMenuItem render={<AppLink href={getDashboardPath(user.role)} />}>
                         <LayoutDashboard className="mr-2 size-4" />
                         Dashboard
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem render={<Link href="/profile" />}>
+                    <DropdownMenuItem render={<AppLink href="/profile" />}>
                         <User className="mr-2 size-4" />
                         Profile
                     </DropdownMenuItem>

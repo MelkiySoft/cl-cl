@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link"
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -39,7 +39,7 @@ export function NavLinks({
                         : isActive;
 
                 return (
-                    <Link
+                    <AppLink
                         key={item.href}
                         href={item.href}
                         onClick={onNavigate}
@@ -52,7 +52,7 @@ export function NavLinks({
                     >
                         <item.icon className="size-4 shrink-0" />
                         {item.title}
-                    </Link>
+                    </AppLink>
                 );
             })}
         </nav>
@@ -64,7 +64,7 @@ export function DashboardSidebar({ role }: SidebarProps) {
     return (
         <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:bg-background">
             <div className="flex h-14 items-center border-b px-4">
-                <Link
+                <AppLink
                     href="/"
                     className="flex items-center gap-2 font-semibold tracking-tight"
                 >
@@ -74,7 +74,7 @@ export function DashboardSidebar({ role }: SidebarProps) {
                     <span>
                         cl-<span className="text-primary">cl</span>
                     </span>
-                </Link>
+                </AppLink>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">

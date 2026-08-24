@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import { useSession, signOut } from "next-auth/react"
 import { Menu, LayoutDashboard, LogOut, LogIn, UserPlus } from "lucide-react"
 
@@ -61,32 +61,32 @@ export function MobileNav({ categories }: MobileNavProps) {
                         <div className="space-y-1">
                             {categories.map((cat) => (
                                 <div key={cat.id}>
-                                    <Link
+                                    <AppLink
                                         href={`/catalog/${cat.slug}`}
                                         onClick={() => setOpen(false)}
                                         className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent transition-colors"
                                     >
                                         {cat.name}
-                                    </Link>
+                                    </AppLink>
                                     {cat.children.map((child) => (
-                                        <Link
+                                        <AppLink
                                             key={child.id}
                                             href={`/catalog/${cat.slug}/${child.slug}`}
                                             onClick={() => setOpen(false)}
                                             className="block rounded-md pl-6 pr-3 py-1.5 text-sm text-muted-foreground hover:bg-accent transition-colors"
                                         >
                                             {child.name}
-                                        </Link>
+                                        </AppLink>
                                     ))}
                                 </div>
                             ))}
-                            <Link
+                            <AppLink
                                 href="/catalog"
                                 onClick={() => setOpen(false)}
                                 className="block rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-accent transition-colors"
                             >
                                 All categories →
-                            </Link>
+                            </AppLink>
                         </div>
                     </div>
 
@@ -95,14 +95,14 @@ export function MobileNav({ categories }: MobileNavProps) {
                     {/* Other links */}
                     <div className="px-4 py-3 space-y-1">
                         {NAV_LINKS.map((link) => (
-                            <Link
+                            <AppLink
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setOpen(false)}
                                 className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent transition-colors"
                             >
                                 {link.label}
-                            </Link>
+                            </AppLink>
                         ))}
                     </div>
 
@@ -118,7 +118,7 @@ export function MobileNav({ categories }: MobileNavProps) {
                                         {session.user.email}
                                     </p>
                                 </div>
-                                <Link
+                                <AppLink
                                     href={
                                         session.user.role === "admin"
                                             ? "/admin"
@@ -134,7 +134,7 @@ export function MobileNav({ categories }: MobileNavProps) {
                                 >
                                     <LayoutDashboard className="mr-2 size-4" />
                                     Dashboard
-                                </Link>
+                                </AppLink>
                                 <Button
                                     variant="ghost"
                                     className="w-full justify-start text-destructive"
@@ -149,15 +149,15 @@ export function MobileNav({ categories }: MobileNavProps) {
                             </>
                         ) : (
                             <>
-                                <Link
+                                <AppLink
                                     href="/login"
                                     onClick={() => setOpen(false)}
                                     className={cn(buttonVariants(), "w-full justify-start")}
                                 >
                                     <LogIn className="mr-2 size-4" />
                                     Log in
-                                </Link>
-                                <Link
+                                </AppLink>
+                                <AppLink
                                     href="/register"
                                     onClick={() => setOpen(false)}
                                     className={cn(
@@ -167,7 +167,7 @@ export function MobileNav({ categories }: MobileNavProps) {
                                 >
                                     <UserPlus className="mr-2 size-4" />
                                     Sign up
-                                </Link>
+                                </AppLink>
                             </>
                         )}
                     </div>

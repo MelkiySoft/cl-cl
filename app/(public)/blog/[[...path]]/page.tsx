@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import { notFound } from "next/navigation"
 
 import {
@@ -79,18 +79,18 @@ export default async function BlogPage({ params, searchParams }: PageProps) {
         <div className="container mx-auto px-4 sm:px-6 py-8">
             {/* Breadcrumbs */}
             <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                <Link href="/" className="hover:text-foreground transition-colors">
+                <AppLink href="/" className="hover:text-foreground transition-colors">
                     Home
-                </Link>
+                </AppLink>
                 <span>/</span>
                 {category ? (
                     <>
-                        <Link
+                        <AppLink
                             href="/blog"
                             className="hover:text-foreground transition-colors"
                         >
                             Blog
-                        </Link>
+                        </AppLink>
                         {category.breadcrumbs.map((crumb, i) => {
                             const isLast = i === category.breadcrumbs.length - 1
                             const crumbPath = category.breadcrumbs
@@ -106,12 +106,12 @@ export default async function BlogPage({ params, searchParams }: PageProps) {
                                             {crumb.name}
                                         </span>
                                     ) : (
-                                        <Link
+                                        <AppLink
                                             href={`/blog/${crumbPath}`}
                                             className="hover:text-foreground transition-colors"
                                         >
                                             {crumb.name}
-                                        </Link>
+                                        </AppLink>
                                     )}
                                 </span>
                             )

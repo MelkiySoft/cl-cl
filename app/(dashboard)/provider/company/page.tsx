@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link"
 import { Plus } from "lucide-react";
 import { getMyCompanies } from "@/actions/provider-company";
 import { buttonVariants } from "@/components/ui/button";
@@ -61,13 +61,13 @@ export default async function ProviderCompaniesPage() {
                     </p>
                 </div>
 
-                <Link
+                <AppLink
                     href="/provider/company/new"
                     className={cn(buttonVariants())}
                 >
                     <Plus className="mr-2 size-4" />
                     Add company
-                </Link>
+                </AppLink>
             </div>
 
             {companies.length === 0 ? (
@@ -80,19 +80,19 @@ export default async function ProviderCompaniesPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Link
+                        <AppLink
                             href="/provider/company/new"
                             className={cn(buttonVariants())}
                         >
                             <Plus className="mr-2 size-4" />
                             Create company
-                        </Link>
+                        </AppLink>
                     </CardContent>
                 </Card>
             ) : (
                 <div className="flex flex-col gap-4">
                     {companies.map((company) => (
-                        <Link
+                        <AppLink
                             key={company.id}
                             href={`/provider/company/${company.id}`}
                             className="block transition-opacity hover:opacity-90"
@@ -197,7 +197,7 @@ export default async function ProviderCompaniesPage() {
                                     </div>
                                 </div>
                             </Card>
-                        </Link>
+                        </AppLink>
                     ))}
                 </div>
             )}

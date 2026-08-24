@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import { Logo } from "./logo"
 
 const FOOTER_LINKS = [
@@ -50,12 +50,12 @@ export function Footer() {
                             <ul className="mt-4 space-y-2.5">
                                 {group.links.map((link) => (
                                     <li key={link.href}>
-                                        <Link
+                                        <AppLink
                                             href={link.href}
                                             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                                         >
                                             {link.label}
-                                        </Link>
+                                        </AppLink>
                                     </li>
                                 ))}
                             </ul>

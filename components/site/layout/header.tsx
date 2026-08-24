@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 
 import { Logo } from "./logo"
 import { CatalogMenu } from "./catalog-menu"
@@ -31,13 +31,13 @@ export function Header({ categories }: HeaderProps) {
                     <nav className="hidden lg:flex items-center gap-1">
                         <CatalogMenu categories={categories} />
                         {NAV_LINKS.map((link) => (
-                            <Link
+                            <AppLink
                                 key={link.href}
                                 href={link.href}
                                 className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent/50"
                             >
                                 {link.label}
-                            </Link>
+                            </AppLink>
                         ))}
                     </nav>
                 </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import { ChevronDown } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -42,14 +42,14 @@ export function CatalogMenu({ categories }: CatalogMenuProps) {
 
                     {categories.map((cat) => (
                         <div key={cat.id}>
-                            <DropdownMenuItem render={<Link href={`/catalog/${cat.slug}`} />}>
+                            <DropdownMenuItem render={<AppLink href={`/catalog/${cat.slug}`} />}>
                                 {cat.name}
                             </DropdownMenuItem>
 
                             {cat.children.map((child) => (
                                 <DropdownMenuItem
                                     key={child.id}
-                                    render={<Link href={`/catalog/${cat.slug}/${child.slug}`} />}
+                                    render={<AppLink href={`/catalog/${cat.slug}/${child.slug}`} />}
                                     className="pl-6 text-muted-foreground"
                                 >
                                     {child.name}
@@ -62,7 +62,7 @@ export function CatalogMenu({ categories }: CatalogMenuProps) {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuGroup>
-                    <DropdownMenuItem render={<Link href="/catalog" />}>
+                    <DropdownMenuItem render={<AppLink href="/catalog" />}>
             <span className="font-medium text-primary">
               View all categories →
             </span>

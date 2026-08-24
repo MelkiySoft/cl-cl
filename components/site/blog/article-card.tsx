@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import Image from "next/image"
 import type { CatalogArticle } from "@/lib/blog-categories"
 
@@ -17,7 +17,7 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
         : null
 
     return (
-        <Link
+        <AppLink
             href={`/article/${article.slug}`}
             className="group flex h-full flex-col overflow-hidden rounded-xl border bg-card transition-colors hover:border-primary/40"
         >
@@ -53,6 +53,6 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
                     </p>
                 )}
             </div>
-        </Link>
+        </AppLink>
     )
 }

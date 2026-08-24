@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link"
 import { ArrowLeft } from "lucide-react";
 import { CreateCompanyForm } from "@/components/dashboard/provider/create-company-form";
 
@@ -6,13 +6,13 @@ export default function NewCompanyPage() {
     return (
         <div className="space-y-6 max-w-7xl">
             <div>
-                <Link
+                <AppLink
                     href="/provider/company"
                     className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft className="mr-1 size-4" />
                     Back to companies
-                </Link>
+                </AppLink>
 
                 <h1 className="text-2xl font-semibold tracking-tight">
                     New company

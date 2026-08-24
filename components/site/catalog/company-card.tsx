@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import Image from "next/image"
 import { Shield, BadgeCheck, Award, MapPin } from "lucide-react"
 
@@ -14,7 +14,7 @@ export function CompanyCard({ company, priority = false }: CompanyCardProps) {
     const location = [company.city, company.state].filter(Boolean).join(", ")
 
     return (
-        <Link href={`/company/${company.slug}`} className="group block h-full">
+        <AppLink href={`/company/${company.slug}`} className="group block h-full">
             <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
                 {/* Image */}
                 <div className="relative aspect-[16/10] bg-muted overflow-hidden">
@@ -76,6 +76,6 @@ export function CompanyCard({ company, priority = false }: CompanyCardProps) {
                     </div>
                 </div>
             </Card>
-        </Link>
+        </AppLink>
     )
 }

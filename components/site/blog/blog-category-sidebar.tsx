@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { AppLink } from "@/components/ui/app-link"
 import { ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -29,7 +29,7 @@ function CategoryItem({
 
     return (
         <div>
-            <Link
+            <AppLink
                 href={href}
                 className={cn(
                     "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
@@ -43,7 +43,7 @@ function CategoryItem({
                     <ChevronRight className="size-3.5 shrink-0 opacity-50" />
                 )}
                 <span className={cn(!hasChildren && "ml-5")}>{node.name}</span>
-            </Link>
+            </AppLink>
 
             {hasChildren && (
                 <div className="mt-0.5">
@@ -73,7 +73,7 @@ export function BlogCategorySidebar({
                     Categories
                 </p>
 
-                <Link
+                <AppLink
                     href="/blog"
                     className={cn(
                         "flex items-center rounded-md px-2.5 py-1.5 text-sm transition-colors",
@@ -83,7 +83,7 @@ export function BlogCategorySidebar({
                     )}
                 >
                     All articles
-                </Link>
+                </AppLink>
 
                 <div className="mt-1 space-y-0.5">
                     {tree.map((node) => (

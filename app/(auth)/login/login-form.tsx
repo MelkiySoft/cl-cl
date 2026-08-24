@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link"
 import { login, type AuthState } from "@/actions/auth";
 
 const initialState: AuthState = {};
@@ -94,9 +94,9 @@ export function LoginForm() {
 
             <p className="text-center text-sm text-muted-foreground">
                 Нет аккаунта?{" "}
-                <Link href="/register" className="underline underline-offset-4">
+                <AppLink href="/register" className="underline underline-offset-4">
                     Зарегистрироваться
-                </Link>
+                </AppLink>
             </p>
         </div>
     );

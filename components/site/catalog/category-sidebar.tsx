@@ -1,30 +1,33 @@
 "use client"
 
 import { AppLink } from "@/components/ui/app-link"
-import { usePathname } from "next/navigation"
 import { ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { buildCatalogPath } from "@/lib/catalog-path"
 import type { CategoryNode } from "@/lib/categories"
 
 type CategorySidebarProps = {
     tree: CategoryNode[]
     currentSlug?: string
+    citySlug?: string | null
 }
 
 function CategoryItem({
                           node,
                           depth = 0,
                           currentSlug,
-                          parentPath = "",
+                          citySlug,
+                          parentSlugs = [],
                       }: {
     node: CategoryNode
     depth?: number
     currentSlug?: string
-    parentPath?: string
+    citySlug?: string | null
+    parentSlugs?: string[]
 }) {
-    const path = parentPath ? `${parentPath}/${node.slug}` : node.slug
-    const href = `/catalog/${path}`
+    const categorySlugs = [...parentSlugs, node.slug]
+    const href = buildCatalogPath({ citySlug, categorySlugs })
     const isActive = currentSlug === node.slug
     const hasChildren = node.children.length > 0
 
@@ -54,7 +57,8 @@ function CategoryItem({
                             node={child}
                             depth={depth + 1}
                             currentSlug={currentSlug}
-                            parentPath={path}
+                            citySlug={citySlug}
+                            parentSlugs={categorySlugs}
                         />
                     ))}
                 </div>
@@ -63,7 +67,11 @@ function CategoryItem({
     )
 }
 
-export function CategorySidebar({ tree, currentSlug }: CategorySidebarProps) {
+export function CategorySidebar({
+                                    tree,
+                                    currentSlug,
+                                    citySlug,
+                                }: CategorySidebarProps) {
     return (
         <aside className="w-full lg:w-56 shrink-0">
             <div className="sticky top-20 space-y-1">
@@ -72,7 +80,7 @@ export function CategorySidebar({ tree, currentSlug }: CategorySidebarProps) {
                 </p>
 
                 <AppLink
-                    href="/catalog"
+                    href={buildCatalogPath({ citySlug })}
                     className={cn(
                         "flex items-center rounded-md px-2.5 py-1.5 text-sm transition-colors",
                         !currentSlug
@@ -89,6 +97,7 @@ export function CategorySidebar({ tree, currentSlug }: CategorySidebarProps) {
                             key={node.id}
                             node={node}
                             currentSlug={currentSlug}
+                            citySlug={citySlug}
                         />
                     ))}
                 </div>

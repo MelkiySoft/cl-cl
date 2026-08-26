@@ -7,6 +7,8 @@ import {
     getCompaniesByCategoryId,
     type CompanySort,
 } from "@/lib/categories"
+import { parseCatalogPath, buildCatalogPath } from "@/lib/catalog-path"
+import { getPublicCityBySlug } from "@/lib/geo"
 import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
 import { CompanyGrid } from "@/components/site/catalog/company-grid"
 import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
@@ -26,24 +28,50 @@ export async function generateMetadata({
                                            params,
                                        }: PageProps): Promise<Metadata> {
     const { path } = await params
-    const slugs = path ?? []
+    const { citySlug, categorySlugs } = parseCatalogPath(path)
 
-    if (slugs.length === 0) {
+    const [city, category] = await Promise.all([
+        citySlug ? getPublicCityBySlug(citySlug) : Promise.resolve(null),
+        categorySlugs.length > 0
+            ? getCategoryByPath(categorySlugs)
+            : Promise.resolve(null),
+    ])
+
+    if (citySlug && !city) return { title: "City not found" }
+    if (categorySlugs.length > 0 && !category) return { title: "Category not found" }
+
+    const location = city ? `${city.city}, ${city.stateId}` : null
+
+    if (!city && !category) {
         return {
             title: "Catalog — Cleaning Companies",
             description: "Browse cleaning companies by category",
         }
     }
 
-    const category = await getCategoryByPath(slugs)
-    if (!category) return { title: "Category not found" }
+    if (city && !category) {
+        return {
+            title: `Cleaning Companies in ${location}`,
+            description: `Find cleaning companies in ${location}`,
+        }
+    }
+
+    if (city && category) {
+        return {
+            title: category.metaTitle || `${category.name} in ${location}`,
+            description:
+                category.metaDescription ||
+                category.description ||
+                `Find ${category.name.toLowerCase()} companies in ${location}`,
+        }
+    }
 
     return {
-        title: category.metaTitle || `${category.name} — Cleaning Companies`,
+        title: category!.metaTitle || `${category!.name} — Cleaning Companies`,
         description:
-            category.metaDescription ||
-            category.description ||
-            `Find cleaning companies in ${category.name}`,
+            category!.metaDescription ||
+            category!.description ||
+            `Find cleaning companies in ${category!.name}`,
     }
 }
 
@@ -53,76 +81,103 @@ export default async function CatalogFilterPage({
                                                 }: PageProps) {
     const { path } = await params
     const sp = await searchParams
-    const slugs = path ?? []
+    const { citySlug, categorySlugs } = parseCatalogPath(path)
 
     const sort = (sp.sort as CompanySort) || "sort_order"
     const limit = Number(sp.limit) || 15
     const page = Number(sp.page) || 1
 
-    const [tree, category] = await Promise.all([
+    const [tree, city, category] = await Promise.all([
         getCategoryTree(),
-        slugs.length > 0 ? getCategoryByPath(slugs) : Promise.resolve(null),
+        citySlug ? getPublicCityBySlug(citySlug) : Promise.resolve(null),
+        categorySlugs.length > 0
+            ? getCategoryByPath(categorySlugs)
+            : Promise.resolve(null),
     ])
 
-    if (slugs.length > 0 && !category) {
-        notFound()
-    }
+    if (citySlug && !city) notFound()
+    if (categorySlugs.length > 0 && !category) notFound()
 
     const { companies, total, totalPages } = await getCompaniesByCategoryId({
         categoryId: category?.id ?? null,
+        zips: city?.zips,
         sort,
         limit,
         page,
     })
 
-    const title = category?.metaH1 || category?.name || "All Cleaning Companies"
+    const location = city ? `${city.city}, ${city.stateId}` : null
+    const title = city && category
+        ? `${category.metaH1 || category.name} in ${location}`
+        : city
+            ? `Cleaning Companies in ${location}`
+            : category?.metaH1 || category?.name || "All Cleaning Companies"
+
     const currentSlug = category?.slug
 
     return (
         <div className="container mx-auto px-4 sm:px-6 py-8">
-            {/* Breadcrumbs */}
             <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                 <AppLink href="/" className="hover:text-foreground transition-colors">
                     Home
                 </AppLink>
                 <span>/</span>
-                {category ? (
-                    <>
-                        <AppLink
-                            href="/catalog"
-                            className="hover:text-foreground transition-colors"
-                        >
-                            Catalog
-                        </AppLink>
-                        {category.breadcrumbs.map((crumb, i) => {
-                            const isLast = i === category.breadcrumbs.length - 1
-                            const crumbPath = category.breadcrumbs
-                                .slice(0, i + 1)
-                                .map((c) => c.slug)
-                                .join("/")
-
-                            return (
-                                <span key={crumb.id} className="flex items-center gap-1.5">
-                                    <span>/</span>
-                                    {isLast ? (
-                                        <span className="text-foreground font-medium">
-                                            {crumb.name}
-                                        </span>
-                                    ) : (
-                                        <AppLink
-                                            href={`/catalog/${crumbPath}`}
-                                            className="hover:text-foreground transition-colors"
-                                        >
-                                            {crumb.name}
-                                        </AppLink>
-                                    )}
-                                </span>
-                            )
-                        })}
-                    </>
+                {city || category ? (
+                    <AppLink
+                        href="/catalog"
+                        className="hover:text-foreground transition-colors"
+                    >
+                        Catalog
+                    </AppLink>
                 ) : (
                     <span className="text-foreground font-medium">Catalog</span>
                 )}
+
+                {city && (
+                    <>
+                        <span>/</span>
+                        {category ? (
+                            <AppLink
+                                href={buildCatalogPath({ citySlug: city.slug })}
+                                className="hover:text-foreground transition-colors"
+                            >
+                                {location}
+                            </AppLink>
+                        ) : (
+                            <span className="text-foreground font-medium">
+                                {location}
+                            </span>
+                        )}
+                    </>
+                )}
+
+                {category?.breadcrumbs.map((crumb, i) => {
+                    const isLast = i === category.breadcrumbs.length - 1
+                    const crumbSlugs = category.breadcrumbs
+                        .slice(0, i + 1)
+                        .map((c) => c.slug)
+
+                    return (
+                        <span key={crumb.id} className="flex items-center gap-1.5">
+                            <span>/</span>
+                            {isLast ? (
+                                <span className="text-foreground font-medium">
+                                    {crumb.name}
+                                </span>
+                            ) : (
+                                <AppLink
+                                    href={buildCatalogPath({
+                                        citySlug: city?.slug,
+                                        categorySlugs: crumbSlugs,
+                                    })}
+                                    className="hover:text-foreground transition-colors"
+                                >
+                                    {crumb.name}
+                                </AppLink>
+                            )}
+                        </span>
+                    )
+                })}
             </nav>
 
             <div className="mb-6">
@@ -135,7 +190,11 @@ export default async function CatalogFilterPage({
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8">
-                <CategorySidebar tree={tree} currentSlug={currentSlug} />
+                <CategorySidebar
+                    tree={tree}
+                    currentSlug={currentSlug}
+                    citySlug={city?.slug}
+                />
 
                 <div className="flex-1 min-w-0">
                     <Suspense fallback={null}>
@@ -148,7 +207,6 @@ export default async function CatalogFilterPage({
                         <CatalogPagination page={page} totalPages={totalPages} />
                     </Suspense>
                 </div>
-
             </div>
         </div>
     )

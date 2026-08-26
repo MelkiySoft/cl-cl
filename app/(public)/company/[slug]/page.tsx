@@ -23,6 +23,8 @@ import { Separator } from "@/components/ui/separator"
 import { CompanyMapLoader } from "@/components/site/company/company-map-loader"
 import { db } from "@/db"
 import { companies } from "@/db/schema"
+import { buildCatalogPath } from "@/lib/catalog-path"
+import { getPublicCityByZip } from "@/lib/geo"
 
 export const revalidate = 3600 // 1 час
 
@@ -72,6 +74,10 @@ export default async function CompanyPage({ params }: PageProps) {
 
     const title = company.metaH1 || company.name
     const location = [company.city, company.state].filter(Boolean).join(", ")
+    const city = await getPublicCityByZip(company.zip)
+    const citySlug = city?.slug ?? null
+    const cityLabel = city ? `${city.city}, ${city.stateId}` : null
+
     const fullAddress = [
         company.addressLine1,
         company.addressLine2,
@@ -104,30 +110,43 @@ export default async function CompanyPage({ params }: PageProps) {
                     Catalog
                 </AppLink>
 
+                {cityLabel && citySlug && (
+                    <>
+                        <span>/</span>
+                        <AppLink
+                            href={buildCatalogPath({ citySlug })}
+                            className="hover:text-foreground transition-colors"
+                        >
+                            {cityLabel}
+                        </AppLink>
+                    </>
+                )}
+
                 {(() => {
                     const mainCategory =
-                        company.categories.find((c) => c.isMain) ?? company.categories[0]
+                        company.categories.find((c) => c.isMain) ??
+                        company.categories[0]
 
                     if (!mainCategory) return null
 
                     return mainCategory.path.map((crumb, i) => {
-                        const href =
-                            "/catalog/" +
-                            mainCategory.path
+                        const href = buildCatalogPath({
+                            citySlug,
+                            categorySlugs: mainCategory.path
                                 .slice(0, i + 1)
-                                .map((c) => c.slug)
-                                .join("/")
+                                .map((c) => c.slug),
+                        })
 
                         return (
                             <span key={crumb.id} className="flex items-center gap-1.5">
-                    <span>/</span>
-                    <AppLink
-                        href={href}
-                        className="hover:text-foreground transition-colors"
-                    >
-                        {crumb.name}
-                    </AppLink>
-                </span>
+                                <span>/</span>
+                                <AppLink
+                                    href={href}
+                                    className="hover:text-foreground transition-colors"
+                                >
+                                    {crumb.name}
+                                </AppLink>
+                            </span>
                         )
                     })
                 })()}

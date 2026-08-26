@@ -1,6 +1,6 @@
 import { cache } from "react"
 import { unstable_cache } from "next/cache"
-import { eq, isNull, asc, desc, and, sql } from "drizzle-orm"
+import { eq, isNull, asc, desc, and, sql, inArray } from "drizzle-orm"
 import type { SQL } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -224,6 +224,7 @@ export type CompanySort =
 
 export type CompaniesQuery = {
     categoryId: number | null
+    zips?: string[]
     sort?: CompanySort
     limit?: number
     page?: number
@@ -243,10 +244,12 @@ const DEFAULT_SORT: CompanySort = "sort_order"
 export const getCompaniesByCategoryId = cache(
     async ({
                categoryId,
+               zips,
                sort = DEFAULT_SORT,
                limit = DEFAULT_LIMIT,
                page = 1,
            }: CompaniesQuery): Promise<CompaniesResult> => {
+
         const safeLimit = [15, 30, 60, 120].includes(limit) ? limit : DEFAULT_LIMIT
         const safePage = Math.max(1, page)
         const offset = (safePage - 1) * safeLimit
@@ -268,9 +271,24 @@ export const getCompaniesByCategoryId = cache(
             }
         })()
 
+        const zipFilter =
+            zips && zips.length > 0 ? inArray(companies.zip, zips) : undefined
+
+        // город выбран, но ZIP нет — пустая выдача, не весь каталог
+        if (zips && zips.length === 0) {
+            return {
+                companies: [],
+                total: 0,
+                page: safePage,
+                limit: safeLimit,
+                totalPages: 1,
+            }
+        }
+
         const baseWhere = and(
             eq(companies.status, true),
-            eq(companies.moderationStatus, "approved")
+            eq(companies.moderationStatus, "approved"),
+            zipFilter
         )
 
         // --- без категории (все) ---

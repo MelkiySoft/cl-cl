@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-24T11:47:24.387Z
+> Последнее обновление: 2026-08-26T12:12:27.138Z
 
 ```bash
 ├── actions/
@@ -120,6 +120,7 @@
 │   ├── providers.tsx
 │   └── theme-provider.tsx
 ├── config/
+│   └── cities.ts
 ├── data/
 │   └── geo/
 │       ├── tl_2025_us_zcta520.csv
@@ -142,8 +143,10 @@
 │   ├── articles.ts
 │   ├── auth.ts
 │   ├── blog-categories.ts
+│   ├── catalog-path.ts
 │   ├── categories.ts
 │   ├── companies.ts
+│   ├── geo.ts
 │   ├── provider-categories.ts
 │   ├── r2.ts
 │   └── utils.ts

@@ -16,6 +16,19 @@ export function parseCatalogPath(path: string[] | undefined): {
     return { citySlug: null, categorySlugs: slugs }
 }
 
+export function parseCatalogPathname(pathname: string): {
+    citySlug: string | null
+    categorySlugs: string[]
+} {
+    const parts = pathname.split("/").filter(Boolean)
+    if (parts[0] !== "catalog") {
+        return { citySlug: null, categorySlugs: [] }
+    }
+
+    const segs = parts[1] === "filter" ? parts.slice(2) : parts.slice(1)
+    return parseCatalogPath(segs)
+}
+
 export function buildCatalogPath(opts: {
     citySlug?: string | null
     categorySlugs?: string[]

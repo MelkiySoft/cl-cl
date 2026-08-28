@@ -4,7 +4,9 @@ import * as React from "react"
 import { AppLink } from "@/components/ui/app-link"
 import { useSession, signOut } from "next-auth/react"
 import { Menu, LayoutDashboard, LogOut, LogIn, UserPlus } from "lucide-react"
-
+import { CityPicker } from "./city-picker"
+import { buildCatalogPath } from "@/lib/catalog-path"
+import { useSelectedCity } from "@/hooks/use-selected-city"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
     Sheet,
@@ -31,6 +33,7 @@ type MobileNavProps = {
 export function MobileNav({ categories }: MobileNavProps) {
     const [open, setOpen] = React.useState(false)
     const { data: session } = useSession()
+    const { citySlug } = useSelectedCity()
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -51,6 +54,10 @@ export function MobileNav({ categories }: MobileNavProps) {
                     <SheetTitle className="text-left">Menu</SheetTitle>
                 </SheetHeader>
 
+                <div className="p-4 border-b md:hidden">
+                    <CityPicker onPicked={() => setOpen(false)} />
+                </div>
+
                 {/* Скроллируемая часть */}
                 <div className="flex-1 overflow-y-auto overscroll-contain py-4">
                     {/* Catalog */}
@@ -62,7 +69,7 @@ export function MobileNav({ categories }: MobileNavProps) {
                             {categories.map((cat) => (
                                 <div key={cat.id}>
                                     <AppLink
-                                        href={`/catalog/${cat.slug}`}
+                                        href={buildCatalogPath({ citySlug, categorySlugs: [cat.slug] })}
                                         onClick={() => setOpen(false)}
                                         className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent transition-colors"
                                     >
@@ -71,7 +78,7 @@ export function MobileNav({ categories }: MobileNavProps) {
                                     {cat.children.map((child) => (
                                         <AppLink
                                             key={child.id}
-                                            href={`/catalog/${cat.slug}/${child.slug}`}
+                                            href={buildCatalogPath({ citySlug, categorySlugs: [cat.slug, child.slug] })}
                                             onClick={() => setOpen(false)}
                                             className="block rounded-md pl-6 pr-3 py-1.5 text-sm text-muted-foreground hover:bg-accent transition-colors"
                                         >
@@ -81,7 +88,7 @@ export function MobileNav({ categories }: MobileNavProps) {
                                 </div>
                             ))}
                             <AppLink
-                                href="/catalog"
+                                href={buildCatalogPath({ citySlug })}
                                 onClick={() => setOpen(false)}
                                 className="block rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-accent transition-colors"
                             >

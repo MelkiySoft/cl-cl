@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-26T12:12:27.138Z
+> Последнее обновление: 2026-08-28T05:33:48.527Z
 
 ```bash
 ├── actions/
@@ -57,8 +57,11 @@
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── api/
-│   │   └── auth/
-│   │       └── [...nextauth]/
+│   │   ├── auth/
+│   │   │   └── [...nextauth]/
+│   │   │       └── route.ts
+│   │   └── geo/
+│   │       └── zip/
 │   │           └── route.ts
 │   ├── 111page.tsx
 │   ├── favicon.ico
@@ -99,6 +102,7 @@
 │   │   ├── forms/
 │   │   ├── layout/
 │   │   │   ├── catalog-menu.tsx
+│   │   │   ├── city-picker.tsx
 │   │   │   ├── footer.tsx
 │   │   │   ├── header.tsx
 │   │   │   ├── logo.tsx
@@ -137,6 +141,7 @@
 ├── exports/
 │   └── geo_usa_full.xml
 ├── hooks/
+│   └── use-selected-city.ts
 ├── lib/
 │   ├── validations/
 │   │   └── company.ts

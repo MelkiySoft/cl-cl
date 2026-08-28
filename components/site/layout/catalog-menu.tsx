@@ -2,7 +2,8 @@
 
 import { AppLink } from "@/components/ui/app-link"
 import { ChevronDown } from "lucide-react"
-
+import { buildCatalogPath } from "@/lib/catalog-path"
+import { useSelectedCity } from "@/hooks/use-selected-city"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -20,6 +21,7 @@ type CatalogMenuProps = {
 }
 
 export function CatalogMenu({ categories }: CatalogMenuProps) {
+    const { citySlug } = useSelectedCity()
     return (
         <DropdownMenu>
             <DropdownMenuTrigger
@@ -42,14 +44,30 @@ export function CatalogMenu({ categories }: CatalogMenuProps) {
 
                     {categories.map((cat) => (
                         <div key={cat.id}>
-                            <DropdownMenuItem render={<AppLink href={`/catalog/${cat.slug}`} />}>
+                            <DropdownMenuItem
+                                render={
+                                    <AppLink
+                                        href={buildCatalogPath({
+                                            citySlug,
+                                            categorySlugs: [cat.slug],
+                                        })}
+                                    />
+                                }
+                            >
                                 {cat.name}
                             </DropdownMenuItem>
 
                             {cat.children.map((child) => (
                                 <DropdownMenuItem
                                     key={child.id}
-                                    render={<AppLink href={`/catalog/${cat.slug}/${child.slug}`} />}
+                                    render={
+                                        <AppLink
+                                            href={buildCatalogPath({
+                                                citySlug,
+                                                categorySlugs: [cat.slug, child.slug],
+                                            })}
+                                        />
+                                    }
                                     className="pl-6 text-muted-foreground"
                                 >
                                     {child.name}
@@ -62,7 +80,9 @@ export function CatalogMenu({ categories }: CatalogMenuProps) {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuGroup>
-                    <DropdownMenuItem render={<AppLink href="/catalog" />}>
+                    <DropdownMenuItem
+                        render={<AppLink href={buildCatalogPath({ citySlug })} />}
+                    >
             <span className="font-medium text-primary">
               View all categories →
             </span>

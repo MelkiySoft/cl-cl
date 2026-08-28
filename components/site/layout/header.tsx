@@ -4,6 +4,7 @@ import { AppLink } from "@/components/ui/app-link"
 
 import { Logo } from "./logo"
 import { CatalogMenu } from "./catalog-menu"
+import { CityPicker } from "./city-picker"
 import { ThemeToggle } from "./theme-toggle"
 import { UserNav } from "./user-nav"
 import { MobileNav } from "./mobile-nav"
@@ -22,12 +23,10 @@ type HeaderProps = {
 export function Header({ categories }: HeaderProps) {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-                {/* Left */}
-                <div className="flex items-center gap-6">
+            <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+                <div className="flex items-center gap-6 min-w-0">
                     <Logo />
 
-                    {/* Desktop nav */}
                     <nav className="hidden lg:flex items-center gap-1">
                         <CatalogMenu categories={categories} />
                         {NAV_LINKS.map((link) => (
@@ -42,8 +41,10 @@ export function Header({ categories }: HeaderProps) {
                     </nav>
                 </div>
 
-                {/* Right */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="hidden md:block">
+                        <CityPicker />
+                    </div>
                     <div className="hidden sm:block">
                         <ThemeToggle />
                     </div>

@@ -10,7 +10,10 @@ import {
     companyImages,
     companyToCategory,
     companyDocuments,
+    companyHours,
+    companyLinks,
 } from "@/db/schema";
+import { emptyWeeklyHours, formatTimeValue } from "@/lib/company-hours";
 import {
     getPrivateDownloadUrl,
     deletePrivateFile,
@@ -18,7 +21,7 @@ import {
 import { slugify } from "@/lib/utils";
 
 import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
-import type { DocumentType } from "@/db/schema";
+import type { CompanyLinkType, DocumentType } from "@/db/schema";
 
 
 // ===================== COMPANIES =====================
@@ -45,7 +48,6 @@ export async function getMyCompanies() {
             image: true,
             phone: true,
             email: true,
-            website: true,
             entityType: true,
             status: true,
             moderationStatus: true,
@@ -102,7 +104,6 @@ export async function createCompany(    data: CompanyCreateValues): Promise<Comp
                 description: data.description ?? null,
                 phone: data.phone ?? null,
                 email: data.email ?? null,
-                website: data.website ?? null,
                 entityType: data.entityType,
                 ein: data.ein ?? null,
                 status: false,
@@ -171,10 +172,11 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
                 description: data.description ?? null,
                 phone: data.phone ?? null,
                 email: data.email ?? null,
-                website: data.website ?? null,
                 entityType: data.entityType,
                 ein: data.ein ?? null,
                 image: data.image ?? null,
+                hoursMode: data.hoursMode,
+                hoursNote: data.hoursNote ?? null,
                 updatedAt: new Date(),
             })
             .where(
@@ -223,6 +225,9 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
             }
         }
 
+        await replaceCompanyHours(id, data);
+        await replaceCompanyLinks(id, data);
+
         await db
             .delete(companyToCategory)
             .where(eq(companyToCategory.companyId, id));
@@ -250,6 +255,113 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
     } catch (err) {
         console.error("updateCompany error:", err);
         return { error: "Failed to update company" };
+    }
+}
+
+
+export async function getCompanyHoursForEdit(companyId: number) {
+    const session = await auth();
+    if (!session?.user?.id) return emptyWeeklyHours();
+
+    const company = await db.query.companies.findFirst({
+        where: and(
+            eq(companies.id, companyId),
+            eq(companies.userId, session.user.id)
+        ),
+        columns: { id: true },
+    });
+    if (!company) return emptyWeeklyHours();
+
+    const rows = await db.query.companyHours.findMany({
+        where: eq(companyHours.companyId, companyId),
+        orderBy: [asc(companyHours.weekday), asc(companyHours.sortOrder)],
+    });
+
+    if (rows.length === 0) return emptyWeeklyHours();
+
+    const firstByDay = new Map<number, (typeof rows)[number]>();
+    for (const row of rows) {
+        if (!firstByDay.has(row.weekday)) firstByDay.set(row.weekday, row);
+    }
+
+    return emptyWeeklyHours().map((slot) => {
+        const row = firstByDay.get(slot.weekday);
+        if (!row) return slot;
+        return {
+            weekday: row.weekday,
+            openTime: formatTimeValue(row.openTime),
+            closeTime: formatTimeValue(row.closeTime),
+            isClosed: row.isClosed,
+            sortOrder: row.sortOrder,
+        };
+    });
+}
+
+export async function getCompanyLinksForEdit(companyId: number) {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    const company = await db.query.companies.findFirst({
+        where: and(
+            eq(companies.id, companyId),
+            eq(companies.userId, session.user.id)
+        ),
+        columns: { id: true },
+    });
+    if (!company) return [];
+
+    return db.query.companyLinks.findMany({
+        where: eq(companyLinks.companyId, companyId),
+        orderBy: [asc(companyLinks.sortOrder), asc(companyLinks.id)],
+        columns: {
+            type: true,
+            url: true,
+            sortOrder: true,
+        },
+    });
+}
+
+async function replaceCompanyHours(
+    companyId: number,
+    data: CompanyFormValues
+) {
+    await db.delete(companyHours).where(eq(companyHours.companyId, companyId));
+
+    if (data.hoursMode !== "weekly") return;
+
+    const values = data.hours
+        .filter((slot) => slot.isClosed || (slot.openTime && slot.closeTime))
+        .map((slot) => ({
+            companyId,
+            weekday: slot.weekday,
+            isClosed: slot.isClosed,
+            openTime: slot.isClosed || !slot.openTime ? null : slot.openTime,
+            closeTime: slot.isClosed || !slot.closeTime ? null : slot.closeTime,
+            sortOrder: slot.sortOrder ?? 0,
+        }));
+
+    if (values.length > 0) {
+        await db.insert(companyHours).values(values);
+    }
+}
+
+async function replaceCompanyLinks(
+    companyId: number,
+    data: CompanyFormValues
+) {
+    await db.delete(companyLinks).where(eq(companyLinks.companyId, companyId));
+
+    const values = data.links
+        .filter((link) => Boolean(link.url && link.url.trim()))
+        .map((link, index) => ({
+            companyId,
+            type: link.type as CompanyLinkType,
+            url: link.url.trim(),
+            sortOrder: link.type === "website" ? 0 : index + 1,
+        }));
+
+    if (values.length > 0) {
+        await db.insert(companyLinks).values(values);
     }
 }
 

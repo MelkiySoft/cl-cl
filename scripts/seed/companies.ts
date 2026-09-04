@@ -6,6 +6,7 @@ import {
     companies,
     companyImages,
     companyToCategory,
+    companyLinks,
     categories,
 } from "@/db/schema"
 
@@ -137,7 +138,6 @@ export async function seedCompanies() {
             image,
             phone: `+1-555-${String(1000 + (i % 9000)).padStart(4, "0")}`,
             email: `info@company${i}.example`,
-            website: `https://company${i}.example`,
             ein: `${String(10 + (i % 90)).padStart(2, "0")}-${String(1000000 + i).slice(0, 7)}`,
             businessStructure: "llc" as const,
             yearFounded: 2010 + (i % 15),
@@ -181,6 +181,16 @@ export async function seedCompanies() {
         .returning({ id: companies.id })
 
     console.log(`  ✓ Inserted ${inserted.length} companies`)
+
+    await db.insert(companyLinks).values(
+        inserted.map((row, i) => ({
+            companyId: row.id,
+            type: "website" as const,
+            url: `https://company${i + 1}.example`,
+            sortOrder: 0,
+        }))
+    )
+    console.log(`  ✓ Inserted ${inserted.length} website links`)
 
     // --- company_images ---
     if (imageValues.length > 0) {

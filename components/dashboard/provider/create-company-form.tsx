@@ -38,7 +38,6 @@ export function CreateCompanyForm() {
             description: "",
             phone: "",
             email: "",
-            website: "",
         },
     });
 
@@ -240,24 +239,6 @@ export function CreateCompanyForm() {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label htmlFor="website" className="text-sm font-medium">
-                            Website
-                        </label>
-                        <input
-                            id="website"
-                            type="url"
-                            {...register("website")}
-                            placeholder="https://example.com"
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            disabled={isPending}
-                        />
-                        {errors.website && (
-                            <p className="text-sm text-destructive">
-                                {errors.website.message}
-                            </p>
-                        )}
-                    </div>
                 </CardContent>
             </Card>
 

@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-08-28T05:33:48.527Z
+> Последнее обновление: 2026-09-04T14:07:15.790Z
 
 ```bash
 ├── actions/
@@ -81,6 +81,8 @@
 │   │       ├── company-categories-fields.tsx
 │   │       ├── company-documents.tsx
 │   │       ├── company-gallery.tsx
+│   │       ├── company-hours-fields.tsx
+│   │       ├── company-links-fields.tsx
 │   │       ├── create-company-form.tsx
 │   │       └── edit-company-form.tsx
 │   ├── site/
@@ -97,6 +99,7 @@
 │   │   │   └── company-grid.tsx
 │   │   ├── company/
 │   │   │   ├── company-gallery.tsx
+│   │   │   ├── company-hours.tsx
 │   │   │   ├── company-map-loader.tsx
 │   │   │   └── company-map.tsx
 │   │   ├── forms/
@@ -151,6 +154,8 @@
 │   ├── catalog-path.ts
 │   ├── categories.ts
 │   ├── companies.ts
+│   ├── company-hours.ts
+│   ├── company-links.ts
 │   ├── geo.ts
 │   ├── provider-categories.ts
 │   ├── r2.ts

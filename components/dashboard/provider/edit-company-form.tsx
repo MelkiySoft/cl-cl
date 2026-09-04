@@ -20,12 +20,17 @@ import { createUploadUrl } from "@/actions/upload";
 import { CompanyGallery } from "@/components/dashboard/provider/company-gallery";
 import { CompanyCategoriesFields } from "@/components/dashboard/provider/company-categories-fields";
 import { CompanyDocuments } from "@/components/dashboard/provider/company-documents";
-import type { DocumentType } from "@/db/schema";
+import { CompanyHoursFields } from "@/components/dashboard/provider/company-hours-fields";
+import { CompanyLinksFields } from "@/components/dashboard/provider/company-links-fields";
+import type { DocumentType, HoursMode } from "@/db/schema";
 import type { LeafOption } from "@/lib/provider-categories";
 import {
     companyFormSchema,
+    type CompanyFormInput,
     type CompanyFormValues,
 } from "@/lib/validations/company";
+import { emptyWeeklyHours, type CompanyHourSlot } from "@/lib/company-hours";
+import type { CompanyLinkItem } from "@/lib/company-links";
 
 type Company = {
     id: number;
@@ -35,7 +40,8 @@ type Company = {
     description: string | null;
     phone: string | null;
     email: string | null;
-    website: string | null;
+    hoursMode: HoursMode;
+    hoursNote: string | null;
     entityType: string;
     ein: string | null;
     image: string | null;
@@ -70,6 +76,8 @@ type Props = {
         mainId: number | null;
         extraIds: number[];
     };
+    hours: CompanyHourSlot[];
+    links: CompanyLinkItem[];
 };
 
 export function EditCompanyForm({
@@ -78,6 +86,8 @@ export function EditCompanyForm({
                                     documents,
                                     leaves,
                                     categorySelection,
+                                    hours,
+                                    links,
                                 }: Props) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -88,7 +98,7 @@ export function EditCompanyForm({
     const [uploadError, setUploadError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const form = useForm<CompanyFormValues>({
+    const form = useForm<CompanyFormInput, unknown, CompanyFormValues>({
         resolver: zodResolver(companyFormSchema),
         defaultValues: {
             id: company.id,
@@ -100,11 +110,22 @@ export function EditCompanyForm({
             description: company.description ?? "",
             phone: company.phone ?? "",
             email: company.email ?? "",
-            website: company.website ?? "",
             image: company.image ?? "",
             mainCategoryId: categorySelection.mainId,
             extraCategoryId1: categorySelection.extraIds[0] ?? null,
             extraCategoryId2: categorySelection.extraIds[1] ?? null,
+            hoursMode: company.hoursMode ?? "weekly",
+            hoursNote: company.hoursNote ?? "",
+            hours: (hours.length ? hours : emptyWeeklyHours()).map((slot) => ({
+                weekday: slot.weekday,
+                isClosed: slot.isClosed,
+                openTime: slot.openTime ?? "",
+                closeTime: slot.closeTime ?? "",
+                sortOrder: slot.sortOrder,
+            })),
+            links: links.length
+                ? links.map((l) => ({ type: l.type, url: l.url }))
+                : [{ type: "website" as const, url: "" }],
         },
     });
 
@@ -478,24 +499,32 @@ export function EditCompanyForm({
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label htmlFor="website" className="text-sm font-medium">
-                            Website
-                        </label>
-                        <input
-                            id="website"
-                            type="url"
-                            {...register("website")}
-                            placeholder="https://example.com"
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            disabled={isPending}
-                        />
-                        {errors.website && (
-                            <p className="text-sm text-destructive">
-                                {errors.website.message}
-                            </p>
-                        )}
-                    </div>
+                    <CompanyLinksFields
+                        register={register}
+                        watch={watch}
+                        setValue={setValue}
+                        errors={errors}
+                        disabled={isPending}
+                    />
+                </CardContent>
+            </Card>
+
+            {/* Hours */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Hours</CardTitle>
+                    <CardDescription>
+                        Weekly schedule shown on the public company page
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <CompanyHoursFields
+                        register={register}
+                        watch={watch}
+                        setValue={setValue}
+                        errors={errors}
+                        disabled={isPending}
+                    />
                 </CardContent>
             </Card>
 

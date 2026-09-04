@@ -15,6 +15,7 @@ import {
     jsonb,
     uniqueIndex,
     index,
+    time,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import type { AdapterAccountType } from "next-auth/adapters";
@@ -196,6 +197,24 @@ export const moderationStatusEnum = [
 ] as const;
 export type ModerationStatus = (typeof moderationStatusEnum)[number];
 
+export const hoursModeEnum = ["weekly", "always_open", "by_appointment"] as const;
+export type HoursMode = (typeof hoursModeEnum)[number];
+
+export const companyLinkTypeEnum = [
+    "website",
+    "google_business",
+    "google_maps",
+    "yelp",
+    "facebook",
+    "instagram",
+    "youtube",
+    "twitter",
+    "linkedin",
+    "tiktok",
+    "other",
+] as const;
+export type CompanyLinkType = (typeof companyLinkTypeEnum)[number];
+
 export const companies = pgTable("companies", {
     id: serial("id").primaryKey(),
 
@@ -229,7 +248,6 @@ export const companies = pgTable("companies", {
     // контакты
     phone: text("phone"),
     email: text("email"),
-    website: text("website"),
 
     // US tax / business identifiers
     ein: text("ein"), // Employer Identification Number
@@ -241,6 +259,12 @@ export const companies = pgTable("companies", {
     isInsured: boolean("is_insured").notNull().default(false),
     isBonded: boolean("is_bonded").notNull().default(false),
     isLicensed: boolean("is_licensed").notNull().default(false),
+
+    hoursMode: text("hours_mode")
+        .$type<HoursMode>()
+        .notNull()
+        .default("weekly"),
+    hoursNote: text("hours_note"),
 
     // адрес (упрощённо, geo-таблицы — следующим шагом)
     addressLine1: text("address_line1"),
@@ -318,6 +342,48 @@ export const companyDocuments = pgTable("company_documents", {
     }),
 });
 
+// company_hours — недельный график
+export const companyHours = pgTable(
+    "company_hours",
+    {
+        id: serial("id").primaryKey(),
+        companyId: integer("company_id")
+            .notNull()
+            .references(() => companies.id, { onDelete: "cascade" }),
+        weekday: smallint("weekday").notNull(), // 0=Sun … 6=Sat
+        openTime: time("open_time"),
+        closeTime: time("close_time"),
+        isClosed: boolean("is_closed").notNull().default(false),
+        sortOrder: smallint("sort_order").notNull().default(0),
+    },
+    (t) => [
+        uniqueIndex("company_hours_company_day_slot").on(
+            t.companyId,
+            t.weekday,
+            t.sortOrder
+        ),
+        index("company_hours_company_id_idx").on(t.companyId),
+    ]
+);
+
+// company_links — сайт и внешние профили
+export const companyLinks = pgTable(
+    "company_links",
+    {
+        id: serial("id").primaryKey(),
+        companyId: integer("company_id")
+            .notNull()
+            .references(() => companies.id, { onDelete: "cascade" }),
+        type: text("type").$type<CompanyLinkType>().notNull(),
+        url: text("url").notNull(),
+        sortOrder: integer("sort_order").notNull().default(0),
+    },
+    (t) => [
+        uniqueIndex("company_links_company_type").on(t.companyId, t.type),
+        index("company_links_company_id_idx").on(t.companyId),
+    ]
+);
+
 // Relations
 export const companiesRelations = relations(companies, ({ one, many }) => ({
     owner: one(users, {
@@ -327,6 +393,8 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
     images: many(companyImages),
     documents: many(companyDocuments),
     categories: many(companyToCategory),
+    hours: many(companyHours),
+    links: many(companyLinks),
 }));
 export const companyImagesRelations = relations(companyImages, ({ one }) => ({
     company: one(companies, {
@@ -352,6 +420,18 @@ export const companyDocumentsRelations = relations(companyDocuments, ({ one }) =
     reviewer: one(users, {
         fields: [companyDocuments.reviewedBy],
         references: [users.id],
+    }),
+}));
+export const companyHoursRelations = relations(companyHours, ({ one }) => ({
+    company: one(companies, {
+        fields: [companyHours.companyId],
+        references: [companies.id],
+    }),
+}));
+export const companyLinksRelations = relations(companyLinks, ({ one }) => ({
+    company: one(companies, {
+        fields: [companyLinks.companyId],
+        references: [companies.id],
     }),
 }));
 

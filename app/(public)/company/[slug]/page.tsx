@@ -21,6 +21,13 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { CompanyMapLoader } from "@/components/site/company/company-map-loader"
+import { CompanyHours } from "@/components/site/company/company-hours"
+import {
+    COMPANY_LINK_LABELS,
+    displayLinkHost,
+    getWebsiteUrl,
+    sortCompanyLinks,
+} from "@/lib/company-links"
 import { db } from "@/db"
 import { companies } from "@/db/schema"
 import { buildCatalogPath } from "@/lib/catalog-path"
@@ -93,6 +100,10 @@ export default async function CompanyPage({ params }: PageProps) {
         ...(company.image ? [{ id: 0, image: company.image, sortOrder: -1 }] : []),
         ...company.images.filter((img) => img.image !== company.image),
     ]
+    const website = getWebsiteUrl(company.links)
+    const otherLinks = sortCompanyLinks(company.links).filter(
+        (l) => l.type !== "website"
+    )
 
     return (
         <div className="container mx-auto px-4 sm:px-6 py-8">
@@ -207,6 +218,12 @@ export default async function CompanyPage({ params }: PageProps) {
                         </section>
                     )}
 
+                    <CompanyHours
+                        mode={company.hoursMode}
+                        hours={company.hours}
+                        note={company.hoursNote}
+                    />
+
                     {/* Details */}
                     <section>
                         <h2 className="text-lg font-semibold mb-3">Details</h2>
@@ -291,17 +308,35 @@ export default async function CompanyPage({ params }: PageProps) {
                                 </a>
                             )}
 
-                            {company.website && (
+                            {website && (
                                 <a
-                                    href={company.website}
+                                    href={website}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     <Globe className="size-4 shrink-0" />
-                                    {company.website.replace(/^https?:\/\//, "")}
+                                    {website.replace(/^https?:\/\//, "")}
                                 </a>
                             )}
+
+                            {otherLinks.map((link) => (
+                                <a
+                                    key={link.type}
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <Globe className="size-4 shrink-0" />
+                                    <span>
+                                        {COMPANY_LINK_LABELS[link.type]}
+                                        <span className="ml-1 text-xs opacity-70">
+                                            {displayLinkHost(link.url)}
+                                        </span>
+                                    </span>
+                                </a>
+                            ))}
 
                             {fullAddress && (
                                 <div className="flex items-start gap-2.5 text-muted-foreground">

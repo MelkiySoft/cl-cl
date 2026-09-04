@@ -1,4 +1,24 @@
 import { z } from "zod";
+import { COMPANY_LINK_TYPES } from "@/lib/company-links";
+
+const emptyToUndef = (v: string | undefined) => (v === "" ? undefined : v);
+
+const hhmm = z
+    .string()
+    .regex(/^$|^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM");
+
+export const companyHourSlotSchema = z.object({
+    weekday: z.number().int().min(0).max(6),
+    isClosed: z.boolean(),
+    openTime: hhmm,
+    closeTime: hhmm,
+    sortOrder: z.number().int().min(0),
+});
+
+export const companyLinkInputSchema = z.object({
+    type: z.enum(COMPANY_LINK_TYPES),
+    url: z.union([z.literal(""), z.url("Invalid URL")]),
+});
 
 // --- Общие поля ---
 const baseCompanyFields = {
@@ -14,29 +34,25 @@ const baseCompanyFields = {
         .string()
         .max(160)
         .optional()
-        .transform((v) => (v === "" ? undefined : v)),
+        .transform(emptyToUndef),
     entityType: z.enum(["company", "individual"]),
     ein: z
         .string()
         .max(20)
         .optional()
-        .transform((v) => (v === "" ? undefined : v)),
+        .transform(emptyToUndef),
     description: z
         .string()
         .max(5000)
         .optional()
-        .transform((v) => (v === "" ? undefined : v)),
+        .transform(emptyToUndef),
     phone: z
         .string()
         .max(30)
         .optional()
-        .transform((v) => (v === "" ? undefined : v)),
+        .transform(emptyToUndef),
     email: z
         .union([z.literal(""), z.email("Invalid email")])
-        .optional()
-        .transform((v) => (v === "" || v === undefined ? undefined : v)),
-    website: z
-        .union([z.literal(""), z.url("Invalid URL")])
         .optional()
         .transform((v) => (v === "" || v === undefined ? undefined : v)),
 };
@@ -47,16 +63,53 @@ export const companyCreateSchema = z.object({
 });
 export type CompanyCreateValues = z.input<typeof companyCreateSchema>;
 
+export const companyFormSchema = z
+    .object({
+        id: z.number(),
+        ...baseCompanyFields,
+        image: z
+            .string()
+            .optional()
+            .transform(emptyToUndef),
+        mainCategoryId: z.number().nullable(),
+        extraCategoryId1: z.number().nullable(),
+        extraCategoryId2: z.number().nullable(),
+        hoursMode: z.enum(["weekly", "always_open", "by_appointment"]),
+        hoursNote: z
+            .string()
+            .max(500)
+            .optional()
+            .transform(emptyToUndef),
+        hours: z.array(companyHourSlotSchema),
+        links: z.array(companyLinkInputSchema),
+    })
+    .superRefine((data, ctx) => {
+        const seen = new Set<string>();
+        data.links.forEach((link, index) => {
+            if (!link.url) return;
+            if (seen.has(link.type)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "This link type is already used",
+                    path: ["links", index, "type"],
+                });
+            }
+            seen.add(link.type);
+        });
 
-export const companyFormSchema = z.object({
-    id: z.number(),
-    ...baseCompanyFields,
-    image: z
-        .string()
-        .optional()
-        .transform((v) => (v === "" ? undefined : v)),
-    mainCategoryId: z.number().nullable(),
-    extraCategoryId1: z.number().nullable(),
-    extraCategoryId2: z.number().nullable(),
-});
-export type CompanyFormValues = z.input<typeof companyFormSchema>;
+        if (data.hoursMode !== "weekly") return;
+
+        data.hours.forEach((slot, index) => {
+            if (slot.isClosed) return;
+            if (!slot.openTime || !slot.closeTime) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Set opening and closing time, or mark Closed",
+                    path: ["hours", index, "openTime"],
+                });
+            }
+        });
+    });
+
+export type CompanyFormValues = z.output<typeof companyFormSchema>;
+export type CompanyFormInput = z.input<typeof companyFormSchema>;

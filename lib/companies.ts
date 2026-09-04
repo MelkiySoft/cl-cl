@@ -7,8 +7,13 @@ import {
     companyToCategory,
     categories,
     categoryPath,
+    companyHours,
+    companyLinks,
 } from "@/db/schema"
 import type { CatalogCompany } from "@/lib/categories"
+import type { HoursMode } from "@/db/schema"
+import { formatTimeValue, type CompanyHourSlot } from "@/lib/company-hours"
+import type { CompanyLinkItem } from "@/lib/company-links"
 
 export type CompanyDetail = {
     id: number
@@ -23,7 +28,8 @@ export type CompanyDetail = {
     image: string | null
     phone: string | null
     email: string | null
-    website: string | null
+    hoursMode: HoursMode
+    hoursNote: string | null
     yearFounded: number | null
     employeesCount: number | null
     businessStructure: string | null
@@ -39,6 +45,8 @@ export type CompanyDetail = {
     latitude: string | null
     longitude: string | null
     viewed: number
+    hours: CompanyHourSlot[]
+    links: CompanyLinkItem[]
     images: { id: number; image: string; sortOrder: number }[]
     categories: {
         id: number
@@ -65,6 +73,12 @@ export const getCompanyBySlug = cache(
                         image: true,
                         sortOrder: true,
                     },
+                },
+                hours: {
+                    orderBy: [asc(companyHours.weekday), asc(companyHours.sortOrder)],
+                },
+                links: {
+                    orderBy: [asc(companyLinks.sortOrder), asc(companyLinks.id)],
                 },
                 categories: {
                     columns: {
@@ -153,7 +167,8 @@ export const getCompanyBySlug = cache(
             image: company.image,
             phone: company.phone,
             email: company.email,
-            website: company.website,
+            hoursMode: company.hoursMode,
+            hoursNote: company.hoursNote,
             yearFounded: company.yearFounded,
             employeesCount: company.employeesCount,
             businessStructure: company.businessStructure,
@@ -169,6 +184,18 @@ export const getCompanyBySlug = cache(
             latitude: company.latitude,
             longitude: company.longitude,
             viewed: company.viewed,
+            hours: (company.hours ?? []).map((row) => ({
+                weekday: row.weekday,
+                openTime: formatTimeValue(row.openTime),
+                closeTime: formatTimeValue(row.closeTime),
+                isClosed: row.isClosed,
+                sortOrder: row.sortOrder,
+            })),
+            links: (company.links ?? []).map((row) => ({
+                type: row.type,
+                url: row.url,
+                sortOrder: row.sortOrder,
+            })),
             images: company.images ?? [],
             categories: cats,
         }

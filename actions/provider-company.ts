@@ -55,6 +55,15 @@ export async function getMyCompanies() {
             createdAt: true,
             updatedAt: true,
         },
+        with: {
+            links: {
+                columns: {
+                    type: true,
+                    url: true,
+                    sortOrder: true,
+                },
+            },
+        },
     });
 }
 

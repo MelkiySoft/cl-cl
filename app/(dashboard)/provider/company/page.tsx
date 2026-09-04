@@ -10,6 +10,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { getWebsiteUrl } from "@/lib/company-links";
 
 function StatusBadge({
                          moderationStatus,
@@ -91,114 +92,116 @@ export default async function ProviderCompaniesPage() {
                 </Card>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {companies.map((company) => (
-                        <AppLink
-                            key={company.id}
-                            href={`/provider/company/${company.id}`}
-                            className="block transition-opacity hover:opacity-90"
-                        >
-                            <Card className="overflow-hidden">
-                                <div className="flex flex-col sm:flex-row">
-                                    {/* Image */}
-                                    <div className="relative h-40 w-full shrink-0 bg-muted sm:h-auto sm:w-44">
-                                        {company.image ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img
-                                                src={company.image}
-                                                alt={company.name}
-                                                className="size-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex size-full items-center justify-center text-2xl font-semibold text-muted-foreground">
-                                                {company.name
-                                                    .split(" ")
-                                                    .map((n) => n[0])
-                                                    .join("")
-                                                    .toUpperCase()
-                                                    .slice(0, 2)}
-                                            </div>
-                                        )}
-                                    </div>
+                    {companies.map((company) => {
+                        const website = getWebsiteUrl(company.links ?? []);
 
-                                    {/* Content */}
-                                    <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <h2 className="truncate text-lg font-semibold leading-tight">
-                                                    {company.name}
-                                                </h2>
-                                                <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                                                    /{company.slug}
-                                                </p>
-                                            </div>
-                                            <StatusBadge
-                                                moderationStatus={
-                                                    company.moderationStatus
-                                                }
-                                                status={company.status}
-                                            />
+                        return (
+                            <AppLink
+                                key={company.id}
+                                href={`/provider/company/${company.id}`}
+                                className="block transition-opacity hover:opacity-90"
+                            >
+                                <Card className="overflow-hidden">
+                                    <div className="flex flex-col sm:flex-row">
+                                        <div className="relative h-40 w-full shrink-0 bg-muted sm:h-auto sm:w-44">
+                                            {company.image ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    src={company.image}
+                                                    alt={company.name}
+                                                    className="size-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex size-full items-center justify-center text-2xl font-semibold text-muted-foreground">
+                                                    {company.name
+                                                        .split(" ")
+                                                        .map((n) => n[0])
+                                                        .join("")
+                                                        .toUpperCase()
+                                                        .slice(0, 2)}
+                                                </div>
+                                            )}
                                         </div>
 
-                                        <div className="mt-3 space-y-1 text-sm text-muted-foreground">
-                                            <p className="truncate">
+                                        <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <h2 className="truncate text-lg font-semibold leading-tight">
+                                                        {company.name}
+                                                    </h2>
+                                                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                                                        /{company.slug}
+                                                    </p>
+                                                </div>
+                                                <StatusBadge
+                                                    moderationStatus={
+                                                        company.moderationStatus
+                                                    }
+                                                    status={company.status}
+                                                />
+                                            </div>
+
+                                            <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                                                <p className="truncate">
                                                 <span className="text-foreground/70">
                                                     Legal:
                                                 </span>{" "}
-                                                {company.legalName}
-                                            </p>
-                                            {company.dbaName && (
-                                                <p className="truncate">
+                                                    {company.legalName}
+                                                </p>
+                                                {company.dbaName && (
+                                                    <p className="truncate">
                                                     <span className="text-foreground/70">
                                                         DBA:
                                                     </span>{" "}
-                                                    {company.dbaName}
-                                                </p>
-                                            )}
-                                            <p className="capitalize">
+                                                        {company.dbaName}
+                                                    </p>
+                                                )}
+                                                <p className="capitalize">
                                                 <span className="text-foreground/70">
                                                     Type:
                                                 </span>{" "}
-                                                {company.entityType}
-                                            </p>
-                                        </div>
+                                                    {company.entityType}
+                                                </p>
+                                            </div>
 
-                                        {company.description && (
-                                            <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-                                                {company.description}
-                                            </p>
-                                        )}
-
-                                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                            {company.phone && (
-                                                <span>{company.phone}</span>
+                                            {company.description && (
+                                                <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+                                                    {company.description}
+                                                </p>
                                             )}
-                                            {company.email && (
-                                                <span className="truncate">
+
+                                            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                                {company.phone && (
+                                                    <span>{company.phone}</span>
+                                                )}
+                                                {company.email && (
+                                                    <span className="truncate">
                                                     {company.email}
                                                 </span>
-                                            )}
-                                            {company.website && (
-                                                <span className="truncate">
-                                                    {company.website.replace(
+                                                )}
+                                                {website && (
+                                                    <span className="truncate">
+                                                    {website.replace(
                                                         /^https?:\/\//,
                                                         ""
                                                     )}
                                                 </span>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
 
-                                        {company.moderationStatus ===
-                                            "rejected" &&
-                                            company.moderationNote && (
-                                                <p className="mt-2 text-xs text-destructive">
-                                                    {company.moderationNote}
-                                                </p>
-                                            )}
+                                            {company.moderationStatus ===
+                                                "rejected" &&
+                                                company.moderationNote && (
+                                                    <p className="mt-2 text-xs text-destructive">
+                                                        {company.moderationNote}
+                                                    </p>
+                                                )}
+                                        </div>
                                     </div>
-                                </div>
-                            </Card>
-                        </AppLink>
-                    ))}
+                                </Card>
+                            </AppLink>
+                        );
+                    })}
                 </div>
             )}
         </div>

@@ -22,6 +22,7 @@ import { CompanyCategoriesFields } from "@/components/dashboard/provider/company
 import { CompanyDocuments } from "@/components/dashboard/provider/company-documents";
 import { CompanyHoursFields } from "@/components/dashboard/provider/company-hours-fields";
 import { CompanyLinksFields } from "@/components/dashboard/provider/company-links-fields";
+import { CompanyAttributesFields } from "@/components/dashboard/provider/company-attributes-fields";
 import type { DocumentType, HoursMode } from "@/db/schema";
 import type { LeafOption } from "@/lib/provider-categories";
 import {
@@ -31,6 +32,10 @@ import {
 } from "@/lib/validations/company";
 import { emptyWeeklyHours, type CompanyHourSlot } from "@/lib/company-hours";
 import type { CompanyLinkItem } from "@/lib/company-links";
+import type {
+    AttributeDefinition,
+    CompanyAttributeInput,
+} from "@/lib/company-attributes";
 
 type Company = {
     id: number;
@@ -78,6 +83,8 @@ type Props = {
     };
     hours: CompanyHourSlot[];
     links: CompanyLinkItem[];
+    attributeDefinitions: AttributeDefinition[];
+    attributeValues: CompanyAttributeInput[];
 };
 
 export function EditCompanyForm({
@@ -88,6 +95,8 @@ export function EditCompanyForm({
                                     categorySelection,
                                     hours,
                                     links,
+                                    attributeDefinitions,
+                                    attributeValues,
                                 }: Props) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -126,6 +135,15 @@ export function EditCompanyForm({
             links: links.length
                 ? links.map((l) => ({ type: l.type, url: l.url }))
                 : [{ type: "website" as const, url: "" }],
+            attributes:
+                attributeValues.length > 0
+                    ? attributeValues
+                    : attributeDefinitions.map((def) => ({
+                        attributeId: def.id,
+                        booleanValue: null,
+                        numberValue: null,
+                        valueIds: [],
+                    })),
         },
     });
 
@@ -501,6 +519,25 @@ export function EditCompanyForm({
 
                     <CompanyLinksFields
                         register={register}
+                        watch={watch}
+                        setValue={setValue}
+                        errors={errors}
+                        disabled={isPending}
+                    />
+                </CardContent>
+            </Card>
+
+            {/* Attributes */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Options</CardTitle>
+                    <CardDescription>
+                        Languages, payments and other company options
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <CompanyAttributesFields
+                        definitions={attributeDefinitions}
                         watch={watch}
                         setValue={setValue}
                         errors={errors}

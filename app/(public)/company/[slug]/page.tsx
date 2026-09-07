@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { CompanyMapLoader } from "@/components/site/company/company-map-loader"
 import { CompanyHours } from "@/components/site/company/company-hours"
+import { CompanyAttributes } from "@/components/site/company/company-attributes"
 import {
     COMPANY_LINK_LABELS,
     displayLinkHost,
@@ -223,6 +224,8 @@ export default async function CompanyPage({ params }: PageProps) {
                         hours={company.hours}
                         note={company.hoursNote}
                     />
+
+                    <CompanyAttributes items={company.attributes} />
 
                     {/* Details */}
                     <section>

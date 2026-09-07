@@ -14,6 +14,11 @@ import type { CatalogCompany } from "@/lib/categories"
 import type { HoursMode } from "@/db/schema"
 import { formatTimeValue, type CompanyHourSlot } from "@/lib/company-hours"
 import type { CompanyLinkItem } from "@/lib/company-links"
+import {
+    attributeRowsToDisplay,
+    type CompanyAttributeDisplay,
+} from "@/lib/company-attributes"
+import { getActiveAttributeDefinitions } from "@/lib/company-attributes-db"
 
 export type CompanyDetail = {
     id: number
@@ -47,6 +52,7 @@ export type CompanyDetail = {
     viewed: number
     hours: CompanyHourSlot[]
     links: CompanyLinkItem[]
+    attributes: CompanyAttributeDisplay[]
     images: { id: number; image: string; sortOrder: number }[]
     categories: {
         id: number
@@ -80,6 +86,7 @@ export const getCompanyBySlug = cache(
                 links: {
                     orderBy: [asc(companyLinks.sortOrder), asc(companyLinks.id)],
                 },
+                attributes: true,
                 categories: {
                     columns: {
                         isMain: true,
@@ -196,6 +203,10 @@ export const getCompanyBySlug = cache(
                 url: row.url,
                 sortOrder: row.sortOrder,
             })),
+            attributes: attributeRowsToDisplay(
+                await getActiveAttributeDefinitions(),
+                company.attributes ?? []
+            ),
             images: company.images ?? [],
             categories: cats,
         }

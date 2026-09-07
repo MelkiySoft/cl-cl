@@ -16,8 +16,9 @@ import {
     uniqueIndex,
     index,
     time,
+    check,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import type { AdapterAccountType } from "next-auth/adapters";
 
 // ============================================================
@@ -395,6 +396,7 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
     categories: many(companyToCategory),
     hours: many(companyHours),
     links: many(companyLinks),
+    attributes: many(companyAttributes),
 }));
 export const companyImagesRelations = relations(companyImages, ({ one }) => ({
     company: one(companies, {
@@ -645,6 +647,108 @@ export const articleToCategoryRelations = relations(articleToCategory, ({ one })
     category: one(blogCategories, {
         fields: [articleToCategory.categoryId],
         references: [blogCategories.id],
+    }),
+}));
+
+// ============================================================
+// Company attributes (catalog options)
+// ============================================================
+
+export const attributeTypeEnum = ["boolean", "number", "select", "multiselect"] as const;
+export type AttributeType = (typeof attributeTypeEnum)[number];
+
+export const attributes = pgTable("attributes", {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull().unique(),
+    type: text("type").$type<AttributeType>().notNull(),
+    filterable: boolean("filterable").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    status: boolean("status").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const attributeValues = pgTable(
+    "attribute_values",
+    {
+        id: serial("id").primaryKey(),
+        attributeId: integer("attribute_id")
+            .notNull()
+            .references(() => attributes.id, { onDelete: "cascade" }),
+        name: text("name").notNull(),
+        sortOrder: integer("sort_order").notNull().default(0),
+        status: boolean("status").notNull().default(true),
+    },
+    (t) => [
+        uniqueIndex("uq_attribute_values_attribute_name").on(t.attributeId, t.name),
+        index("idx_attribute_values_attribute_id").on(t.attributeId),
+    ]
+);
+
+export const companyAttributes = pgTable(
+    "company_attributes",
+    {
+        id: serial("id").primaryKey(),
+        companyId: integer("company_id")
+            .notNull()
+            .references(() => companies.id, { onDelete: "cascade" }),
+        attributeId: integer("attribute_id")
+            .notNull()
+            .references(() => attributes.id, { onDelete: "cascade" }),
+        valueId: integer("value_id").references(() => attributeValues.id, {
+            onDelete: "cascade",
+        }),
+        valueBoolean: boolean("value_boolean"),
+        valueNumber: integer("value_number"),
+    },
+    (t) => [
+        check(
+            "company_attributes_one_value",
+            sql`(
+                (${t.valueId} is not null)::int +
+                (${t.valueBoolean} is not null)::int +
+                (${t.valueNumber} is not null)::int
+            ) = 1`
+        ),
+        // boolean / number: одна строка на компанию+атрибут (value_id IS NULL)
+        uniqueIndex("uq_company_attributes_scalar")
+            .on(t.companyId, t.attributeId)
+            .where(sql`${t.valueId} is null`),
+        // select / multiselect: одна строка на значение
+        uniqueIndex("uq_company_attributes_choice")
+            .on(t.companyId, t.attributeId, t.valueId)
+            .where(sql`${t.valueId} is not null`),
+        index("idx_company_attributes_company_id").on(t.companyId),
+        index("idx_company_attributes_attribute_id").on(t.attributeId),
+        index("idx_company_attributes_value_id").on(t.valueId),
+    ]
+);
+
+export const attributesRelations = relations(attributes, ({ many }) => ({
+    values: many(attributeValues),
+    companyAttributes: many(companyAttributes),
+}));
+
+export const attributeValuesRelations = relations(attributeValues, ({ one, many }) => ({
+    attribute: one(attributes, {
+        fields: [attributeValues.attributeId],
+        references: [attributes.id],
+    }),
+    companyAttributes: many(companyAttributes),
+}));
+
+export const companyAttributesRelations = relations(companyAttributes, ({ one }) => ({
+    company: one(companies, {
+        fields: [companyAttributes.companyId],
+        references: [companies.id],
+    }),
+    attribute: one(attributes, {
+        fields: [companyAttributes.attributeId],
+        references: [attributes.id],
+    }),
+    value: one(attributeValues, {
+        fields: [companyAttributes.valueId],
+        references: [attributeValues.id],
     }),
 }));
 

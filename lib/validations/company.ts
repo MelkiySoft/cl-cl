@@ -20,6 +20,13 @@ export const companyLinkInputSchema = z.object({
     url: z.union([z.literal(""), z.url("Invalid URL")]),
 });
 
+export const companyAttributeInputSchema = z.object({
+    attributeId: z.number().int().positive(),
+    booleanValue: z.boolean().nullable(),
+    numberValue: z.number().int().nullable(),
+    valueIds: z.array(z.number().int().positive()),
+});
+
 // --- Общие поля ---
 const baseCompanyFields = {
     name: z
@@ -82,6 +89,7 @@ export const companyFormSchema = z
             .transform(emptyToUndef),
         hours: z.array(companyHourSlotSchema),
         links: z.array(companyLinkInputSchema),
+        attributes: z.array(companyAttributeInputSchema),
     })
     .superRefine((data, ctx) => {
         const seen = new Set<string>();

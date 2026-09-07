@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-07T07:24:38.059Z
+> Последнее обновление: 2026-09-07T13:08:28.702Z
 
 ```text
 ├── actions/
@@ -78,6 +78,7 @@
 │   │   │   ├── nav-config.ts
 │   │   │   └── sidebar.tsx
 │   │   └── provider/
+│   │       ├── company-attributes-fields.tsx
 │   │       ├── company-categories-fields.tsx
 │   │       ├── company-documents.tsx
 │   │       ├── company-gallery.tsx
@@ -98,6 +99,7 @@
 │   │   │   ├── company-card.tsx
 │   │   │   └── company-grid.tsx
 │   │   ├── company/
+│   │   │   ├── company-attributes.tsx
 │   │   │   ├── company-gallery.tsx
 │   │   │   ├── company-hours.tsx
 │   │   │   ├── company-map-loader.tsx
@@ -149,11 +151,14 @@
 │   ├── validations/
 │   │   └── company.ts
 │   ├── articles.ts
+│   ├── attributes.ts
 │   ├── auth.ts
 │   ├── blog-categories.ts
 │   ├── catalog-path.ts
 │   ├── categories.ts
 │   ├── companies.ts
+│   ├── company-attributes-db.ts
+│   ├── company-attributes.ts
 │   ├── company-hours.ts
 │   ├── company-links.ts
 │   ├── geo.ts
@@ -190,11 +195,14 @@
 │   │   └── load-geo-usa.ts
 │   ├── seed/
 │   │   ├── articles.ts
+│   │   ├── attributes.ts
 │   │   ├── blog-categories.ts
 │   │   ├── categories.ts
 │   │   ├── companies.ts
 │   │   └── users.ts
 │   ├── cleanup-r2-orphans.ts
+│   ├── db-reset.ts
+│   ├── db-wipe.ts
 │   ├── generate-structure.js
 │   └── seed.ts
 ├── types/

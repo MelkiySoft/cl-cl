@@ -7,6 +7,7 @@ import {
     getCompanyDocuments,
     getCompanyHoursForEdit,
     getCompanyLinksForEdit,
+    getCompanyAttributesForEdit,
 } from "@/actions/provider-company";
 import { EditCompanyForm } from "@/components/dashboard/provider/edit-company-form";
 import { CompanyGallery } from "@/components/dashboard/provider/company-gallery";
@@ -27,7 +28,7 @@ export default async function EditCompanyPage({ params }: Props) {
         notFound();
     }
 
-    const [company, images, documents, leaves, categorySelection, hours, links] = await Promise.all([
+    const [company, images, documents, leaves, categorySelection, hours, links, attributeState] = await Promise.all([
         getCompanyForEdit(companyId),
         getCompanyImages(companyId),
         getCompanyDocuments(companyId),
@@ -35,6 +36,7 @@ export default async function EditCompanyPage({ params }: Props) {
         getCompanyLeafSelection(companyId),
         getCompanyHoursForEdit(companyId),
         getCompanyLinksForEdit(companyId),
+        getCompanyAttributesForEdit(companyId),
     ]);
 
     if (!company) {
@@ -66,6 +68,8 @@ export default async function EditCompanyPage({ params }: Props) {
                 categorySelection={categorySelection}
                 hours={hours}
                 links={links}
+                attributeDefinitions={attributeState.definitions}
+                attributeValues={attributeState.values}
             />
 
 

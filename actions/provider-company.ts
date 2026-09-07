@@ -15,6 +15,16 @@ import {
 } from "@/db/schema";
 import { emptyWeeklyHours, formatTimeValue } from "@/lib/company-hours";
 import {
+    attributeInputsToRows,
+    emptyAttributeInputs,
+    rowsToAttributeInputs,
+} from "@/lib/company-attributes";
+import {
+    getActiveAttributeDefinitions,
+    getCompanyAttributeRows,
+    replaceCompanyAttributeRows,
+} from "@/lib/company-attributes-db";
+import {
     getPrivateDownloadUrl,
     deletePrivateFile,
 } from "@/lib/r2";
@@ -236,6 +246,10 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
 
         await replaceCompanyHours(id, data);
         await replaceCompanyLinks(id, data);
+        const attributesResult = await replaceCompanyAttributes(id, data);
+        if (attributesResult.error) {
+            return { error: attributesResult.error };
+        }
 
         await db
             .delete(companyToCategory)
@@ -352,6 +366,42 @@ async function replaceCompanyHours(
     if (values.length > 0) {
         await db.insert(companyHours).values(values);
     }
+}
+
+async function replaceCompanyAttributes(
+    companyId: number,
+    data: CompanyFormValues
+): Promise<{ error?: string }> {
+    const defs = await getActiveAttributeDefinitions();
+    const mapped = attributeInputsToRows(companyId, defs, data.attributes ?? []);
+    if ("error" in mapped) return { error: mapped.error };
+    await replaceCompanyAttributeRows(companyId, mapped.rows);
+    return {};
+}
+
+export async function getCompanyAttributesForEdit(companyId: number) {
+    const defs = await getActiveAttributeDefinitions();
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { definitions: defs, values: emptyAttributeInputs(defs) };
+    }
+
+    const company = await db.query.companies.findFirst({
+        where: and(
+            eq(companies.id, companyId),
+            eq(companies.userId, session.user.id)
+        ),
+        columns: { id: true },
+    });
+    if (!company) {
+        return { definitions: defs, values: emptyAttributeInputs(defs) };
+    }
+
+    const rows = await getCompanyAttributeRows(companyId);
+    return {
+        definitions: defs,
+        values: rowsToAttributeInputs(defs, rows),
+    };
 }
 
 async function replaceCompanyLinks(

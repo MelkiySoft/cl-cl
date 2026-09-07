@@ -62,7 +62,7 @@ const content = `# Структура проекта cl-cl
 > 
 > Последнее обновление: ${new Date().toISOString()}
 
-\`\`\`bash
+\`\`\`text
 ${tree}\`\`\`
 
 ---

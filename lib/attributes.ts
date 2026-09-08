@@ -23,6 +23,8 @@ export const ATTRIBUTE_VALUE_ID = {
     spanish: 2,
     polish: 3,
     aslProficient: 4,
+    ukrainian: 5,
+    italian: 6,
 
     // Payment methods (2)
     cash: 11,
@@ -34,6 +36,7 @@ export const ATTRIBUTE_VALUE_ID = {
     applePay: 17,
     googlePay: 18,
     cryptocurrency: 19,
+    samsungPay: 20,
 
     // Cancellation policy (7)
     notice24h: 31,
@@ -48,6 +51,10 @@ export const ATTRIBUTE_VALUE_ID = {
     black: 45,
     veteran: 46,
     lgbtq: 47,
+    locally: 48,
+    disabled: 49,
+    indigenous: 50,
+    minority: 51,
 } as const;
 
 export type AttributeValueId =
@@ -152,6 +159,18 @@ export const ATTRIBUTE_VALUE_SEEDS: AttributeValueSeed[] = [
         name: "ASL proficient",
         sortOrder: 4,
     },
+    {
+        id: ATTRIBUTE_VALUE_ID.ukrainian,
+        attributeId: ATTRIBUTE_ID.languages,
+        name: "Ukrainian",
+        sortOrder: 5,
+    },
+    {
+        id: ATTRIBUTE_VALUE_ID.italian,
+        attributeId: ATTRIBUTE_ID.languages,
+        name: "Italian",
+        sortOrder: 6,
+    },
 
     {
         id: ATTRIBUTE_VALUE_ID.cash,
@@ -206,6 +225,12 @@ export const ATTRIBUTE_VALUE_SEEDS: AttributeValueSeed[] = [
         attributeId: ATTRIBUTE_ID.paymentMethods,
         name: "Cryptocurrency",
         sortOrder: 9,
+    },
+    {
+        id: ATTRIBUTE_VALUE_ID.samsungPay,
+        attributeId: ATTRIBUTE_ID.paymentMethods,
+        name: "Samsung Pay",
+        sortOrder: 10,
     },
 
     {
@@ -268,5 +293,29 @@ export const ATTRIBUTE_VALUE_SEEDS: AttributeValueSeed[] = [
         attributeId: ATTRIBUTE_ID.owned,
         name: "LGBTQ",
         sortOrder: 7,
+    },
+    {
+        id: ATTRIBUTE_VALUE_ID.locally,
+        attributeId: ATTRIBUTE_ID.owned,
+        name: "Locally",
+        sortOrder: 8,
+    },
+    {
+        id: ATTRIBUTE_VALUE_ID.disabled,
+        attributeId: ATTRIBUTE_ID.owned,
+        name: "Disabled",
+        sortOrder: 9,
+    },
+    {
+        id: ATTRIBUTE_VALUE_ID.indigenous,
+        attributeId: ATTRIBUTE_ID.owned,
+        name: "Indigenous",
+        sortOrder: 10,
+    },
+    {
+        id: ATTRIBUTE_VALUE_ID.minority,
+        attributeId: ATTRIBUTE_ID.owned,
+        name: "Minority",
+        sortOrder: 11,
     },
 ];

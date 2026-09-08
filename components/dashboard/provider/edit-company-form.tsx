@@ -26,6 +26,8 @@ import { CompanyAttributesFields } from "@/components/dashboard/provider/company
 import type { DocumentType, HoursMode } from "@/db/schema";
 import type { LeafOption } from "@/lib/provider-categories";
 import {
+    BUSINESS_STRUCTURE_LABELS,
+    BUSINESS_STRUCTURES,
     companyFormSchema,
     type CompanyFormInput,
     type CompanyFormValues,
@@ -49,6 +51,9 @@ type Company = {
     hoursNote: string | null;
     entityType: string;
     ein: string | null;
+    yearFounded: number | null;
+    employeesCount: number | null;
+    businessStructure: string | null;
     image: string | null;
     moderationStatus: string;
     status: boolean;
@@ -116,6 +121,11 @@ export function EditCompanyForm({
             dbaName: company.dbaName ?? "",
             entityType: company.entityType as "company" | "individual",
             ein: company.ein ?? "",
+            yearFounded: company.yearFounded ?? null,
+            employeesCount: company.employeesCount ?? null,
+            businessStructure:
+                (company.businessStructure as CompanyFormInput["businessStructure"]) ??
+                null,
             description: company.description ?? "",
             phone: company.phone ?? "",
             email: company.email ?? "",
@@ -418,6 +428,79 @@ export function EditCompanyForm({
                                 </p>
                             )}
                         </div>
+                    </div>
+
+                    <div className="grid gap-6 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <label htmlFor="yearFounded" className="text-sm font-medium">
+                                Year founded
+                            </label>
+                            <input
+                                id="yearFounded"
+                                type="number"
+                                inputMode="numeric"
+                                min={1800}
+                                max={new Date().getFullYear()}
+                                {...register("yearFounded")}
+                                placeholder="2018"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                disabled={isPending}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Shown on the site as years in business
+                            </p>
+                            {errors.yearFounded && (
+                                <p className="text-sm text-destructive">
+                                    {errors.yearFounded.message}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="employeesCount" className="text-sm font-medium">
+                                Team size
+                            </label>
+                            <input
+                                id="employeesCount"
+                                type="number"
+                                inputMode="numeric"
+                                min={1}
+                                max={10000}
+                                {...register("employeesCount")}
+                                placeholder="5"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                disabled={isPending}
+                            />
+                            {errors.employeesCount && (
+                                <p className="text-sm text-destructive">
+                                    {errors.employeesCount.message}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="businessStructure" className="text-sm font-medium">
+                            Business structure
+                        </label>
+                        <select
+                            id="businessStructure"
+                            {...register("businessStructure")}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            disabled={isPending}
+                        >
+                            <option value="">Not specified</option>
+                            {BUSINESS_STRUCTURES.map((value) => (
+                                <option key={value} value={value}>
+                                    {BUSINESS_STRUCTURE_LABELS[value]}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.businessStructure && (
+                            <p className="text-sm text-destructive">
+                                {errors.businessStructure.message}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">

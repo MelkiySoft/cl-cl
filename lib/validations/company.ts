@@ -27,6 +27,43 @@ export const companyAttributeInputSchema = z.object({
     valueIds: z.array(z.number().int().positive()),
 });
 
+export const BUSINESS_STRUCTURES = [
+    "sole_proprietorship",
+    "llc",
+    "corporation",
+    "partnership",
+    "other",
+] as const;
+
+export const BUSINESS_STRUCTURE_LABELS: Record<
+    (typeof BUSINESS_STRUCTURES)[number],
+    string
+> = {
+    sole_proprietorship: "Sole proprietorship",
+    llc: "LLC",
+    corporation: "Corporation",
+    partnership: "Partnership",
+    other: "Other",
+};
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+function optionalInt(min: number, max: number, message: string) {
+    return z
+        .union([z.number(), z.string(), z.null(), z.undefined()])
+        .transform((value) => {
+            if (value === "" || value === null || value === undefined) return null;
+            const parsed = typeof value === "number" ? value : Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        })
+        .refine(
+            (value) =>
+                value === null ||
+                (Number.isInteger(value) && value >= min && value <= max),
+            message
+        );
+}
+
 // --- Общие поля ---
 const baseCompanyFields = {
     name: z
@@ -81,6 +118,20 @@ export const companyFormSchema = z
         mainCategoryId: z.number().nullable(),
         extraCategoryId1: z.number().nullable(),
         extraCategoryId2: z.number().nullable(),
+        yearFounded: optionalInt(
+            1800,
+            CURRENT_YEAR,
+            `Year founded must be between 1800 and ${CURRENT_YEAR}`
+        ),
+        employeesCount: optionalInt(
+            1,
+            10000,
+            "Team size must be between 1 and 10000"
+        ),
+        businessStructure: z.preprocess(
+            (value) => (value === "" || value === undefined ? null : value),
+            z.enum(BUSINESS_STRUCTURES).nullable()
+        ),
         hoursMode: z.enum(["weekly", "always_open", "by_appointment"]),
         hoursNote: z
             .string()

@@ -1,6 +1,6 @@
 import { cache } from "react"
 import { unstable_cache } from "next/cache"
-import { eq, isNull, asc, desc, and, sql, inArray } from "drizzle-orm"
+import { eq, isNull, asc, desc, and, sql } from "drizzle-orm"
 import type { SQL } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -85,8 +85,7 @@ export type CatalogCompany = {
     slug: string
     description: string | null
     image: string | null
-    city: string | null
-    state: string | null
+    sCity: string | null
     isInsured: boolean
     isBonded: boolean
     isLicensed: boolean
@@ -271,8 +270,22 @@ export const getCompaniesByCategoryId = cache(
             }
         })()
 
+        const zipList =
+            zips && zips.length > 0
+                ? sql.join(
+                    zips.map((zip) => sql`${zip}`),
+                    sql`, `
+                )
+                : null
+
         const zipFilter =
-            zips && zips.length > 0 ? inArray(companies.zip, zips) : undefined
+            zipList
+                ? sql`exists (
+                    select 1
+                    from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
+                    where svc.zip in (${zipList})
+                )`
+                : undefined
 
         // город выбран, но ZIP нет — пустая выдача, не весь каталог
         if (zips && zips.length === 0) {
@@ -311,8 +324,7 @@ export const getCompaniesByCategoryId = cache(
                     slug: true,
                     description: true,
                     image: true,
-                    city: true,
-                    state: true,
+                    sCity: true,
                     isInsured: true,
                     isBonded: true,
                     isLicensed: true,
@@ -352,8 +364,7 @@ export const getCompaniesByCategoryId = cache(
                 slug: companies.slug,
                 description: companies.description,
                 image: companies.image,
-                city: companies.city,
-                state: companies.state,
+                sCity: companies.sCity,
                 isInsured: companies.isInsured,
                 isBonded: companies.isBonded,
                 isLicensed: companies.isLicensed,

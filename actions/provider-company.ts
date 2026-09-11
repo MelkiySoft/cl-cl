@@ -29,6 +29,7 @@ import {
     deletePrivateFile,
 } from "@/lib/r2";
 import { slugify } from "@/lib/utils";
+import { formatServiceCityLabel, getGeoCityByExactLabel, getPublicCityByZip, normalizeZip } from "@/lib/geo";
 
 import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
 import type { CompanyLinkType, DocumentType } from "@/db/schema";
@@ -181,6 +182,41 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
         return { error: "Company not found" };
     }
 
+    const serviceCity = await getGeoCityByExactLabel(data.sCity);
+    if (!serviceCity) {
+        return { error: "Unknown service city" };
+    }
+
+    const serviceZips = [
+        ...new Set(
+            data.sZips
+                .map((zip) => normalizeZip(zip))
+                .filter((zip): zip is string => Boolean(zip))
+        ),
+    ];
+    if (serviceZips.length === 0) {
+        return { error: "Add at least one service ZIP" };
+    }
+
+    for (const zip of serviceZips) {
+        const zipCity = await getPublicCityByZip(zip);
+        if (
+            !zipCity ||
+            formatServiceCityLabel(zipCity.city, zipCity.stateId) !== serviceCity.label
+        ) {
+            return { error: `ZIP ${zip} is not in ${serviceCity.label}` };
+        }
+    }
+
+    if (data.hqZip) {
+        const hqPublic = await getPublicCityByZip(data.hqZip);
+        if (!hqPublic) {
+            return { error: "Headquarters ZIP is not in a listed city" };
+        }
+        data.hqCity = hqPublic.city;
+        data.hqState = hqPublic.stateId;
+    }
+
     try {
         await db
             .update(companies)
@@ -199,6 +235,13 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
                 image: data.image ?? null,
                 hoursMode: data.hoursMode,
                 hoursNote: data.hoursNote ?? null,
+                hqAddressLine1: data.hqAddressLine1 ?? null,
+                hqCity: data.hqCity ?? null,
+                hqState: data.hqState ?? null,
+                hqZip: data.hqZip ?? null,
+                sCity: serviceCity.label,
+                sZips: serviceZips,
+                sArea: data.sArea ?? null,
                 updatedAt: new Date(),
             })
             .where(

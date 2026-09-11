@@ -41,14 +41,13 @@ export type CompanyDetail = {
     isInsured: boolean
     isBonded: boolean
     isLicensed: boolean
-    addressLine1: string | null
-    addressLine2: string | null
-    city: string | null
-    state: string | null
-    zip: string | null
-    country: string
-    latitude: string | null
-    longitude: string | null
+    hqAddressLine1: string | null
+    hqCity: string | null
+    hqState: string | null
+    hqZip: string | null
+    sCity: string | null
+    sZips: string[]
+    sArea: string | null
     viewed: number
     hours: CompanyHourSlot[]
     links: CompanyLinkItem[]
@@ -182,14 +181,13 @@ export const getCompanyBySlug = cache(
             isInsured: company.isInsured,
             isBonded: company.isBonded,
             isLicensed: company.isLicensed,
-            addressLine1: company.addressLine1,
-            addressLine2: company.addressLine2,
-            city: company.city,
-            state: company.state,
-            zip: company.zip,
-            country: company.country,
-            latitude: company.latitude,
-            longitude: company.longitude,
+            hqAddressLine1: company.hqAddressLine1,
+            hqCity: company.hqCity,
+            hqState: company.hqState,
+            hqZip: company.hqZip,
+            sCity: company.sCity,
+            sZips: company.sZips ?? [],
+            sArea: company.sArea,
             viewed: company.viewed,
             hours: (company.hours ?? []).map((row) => ({
                 weekday: row.weekday,
@@ -235,8 +233,7 @@ export const getCompaniesByIds = cache(
                 slug: true,
                 description: true,
                 image: true,
-                city: true,
-                state: true,
+                sCity: true,
                 isInsured: true,
                 isBonded: true,
                 isLicensed: true,

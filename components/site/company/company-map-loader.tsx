@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic"
 
+import type { CompanyMapZone } from "@/components/site/company/company-map"
+
 const CompanyMap = dynamic(
     () =>
         import("@/components/site/company/company-map").then((m) => m.CompanyMap),
@@ -14,8 +16,9 @@ const CompanyMap = dynamic(
 )
 
 type Props = {
-    latitude: string
-    longitude: string
+    latitude?: string
+    longitude?: string
+    zones?: CompanyMapZone[]
     radiusMeters?: number
     className?: string
 }

@@ -23,6 +23,7 @@ import { CompanyDocuments } from "@/components/dashboard/provider/company-docume
 import { CompanyHoursFields } from "@/components/dashboard/provider/company-hours-fields";
 import { CompanyLinksFields } from "@/components/dashboard/provider/company-links-fields";
 import { CompanyAttributesFields } from "@/components/dashboard/provider/company-attributes-fields";
+import { CompanyLocationFields } from "@/components/dashboard/provider/company-location-fields";
 import type { DocumentType, HoursMode } from "@/db/schema";
 import type { LeafOption } from "@/lib/provider-categories";
 import {
@@ -58,6 +59,13 @@ type Company = {
     moderationStatus: string;
     status: boolean;
     slug: string;
+    hqAddressLine1: string | null;
+    hqCity: string | null;
+    hqState: string | null;
+    hqZip: string | null;
+    sCity: string | null;
+    sZips: string[] | null;
+    sArea: string | null;
 };
 
 type GalleryImage = {
@@ -133,6 +141,13 @@ export function EditCompanyForm({
             mainCategoryId: categorySelection.mainId,
             extraCategoryId1: categorySelection.extraIds[0] ?? null,
             extraCategoryId2: categorySelection.extraIds[1] ?? null,
+            hqAddressLine1: company.hqAddressLine1 ?? "",
+            hqCity: company.hqCity ?? "",
+            hqState: company.hqState ?? "",
+            hqZip: company.hqZip ?? "",
+            sCity: company.sCity ?? "",
+            sZips: company.sZips ?? [],
+            sArea: company.sArea ?? "",
             hoursMode: company.hoursMode ?? "weekly",
             hoursNote: company.hoursNote ?? "",
             hours: (hours.length ? hours : emptyWeeklyHours()).map((slot) => ({
@@ -239,7 +254,7 @@ export function EditCompanyForm({
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" autoComplete="off">
             {/* Status */}
             <Card size="sm">
                 <CardContent>
@@ -550,6 +565,8 @@ export function EditCompanyForm({
                     />
                 </CardContent>
             </Card>
+
+            <CompanyLocationFields form={form} disabled={isPending} />
 
             {/* Contacts */}
             <Card>

@@ -32,7 +32,7 @@ import {
 import { db } from "@/db"
 import { companies } from "@/db/schema"
 import { buildCatalogPath } from "@/lib/catalog-path"
-import { getPublicCityByZip } from "@/lib/geo"
+import { getCoordsByServiceCity, getCoordsByZips, getPublicCityByZip } from "@/lib/geo"
 
 export const revalidate = 3600 // 1 час
 
@@ -81,17 +81,22 @@ export default async function CompanyPage({ params }: PageProps) {
     }
 
     const title = company.metaH1 || company.name
-    const location = [company.city, company.state].filter(Boolean).join(", ")
-    const city = await getPublicCityByZip(company.zip)
+    const location = company.sCity ?? ""
+    const city = await getPublicCityByZip(company.sZips[0] ?? null)
     const citySlug = city?.slug ?? null
     const cityLabel = city ? `${city.city}, ${city.stateId}` : null
+    const zipZones = await getCoordsByZips(company.sZips)
+    const coords = zipZones.length > 0
+        ? null
+        : company.sCity
+            ? await getCoordsByServiceCity(company.sCity)
+            : null
 
-    const fullAddress = [
-        company.addressLine1,
-        company.addressLine2,
-        company.city,
-        company.state,
-        company.zip,
+    const hqAddress = [
+        company.hqAddressLine1,
+        company.hqCity,
+        company.hqState,
+        company.hqZip,
     ]
         .filter(Boolean)
         .join(", ")
@@ -341,10 +346,10 @@ export default async function CompanyPage({ params }: PageProps) {
                                 </a>
                             ))}
 
-                            {fullAddress && (
+                            {hqAddress && (
                                 <div className="flex items-start gap-2.5 text-muted-foreground">
                                     <MapPin className="size-4 shrink-0 mt-0.5" />
-                                    <span>{fullAddress}</span>
+                                    <span>{hqAddress}</span>
                                 </div>
                             )}
                         </div>
@@ -367,16 +372,38 @@ export default async function CompanyPage({ params }: PageProps) {
                             </p>
                         )}
 
-                        {company.latitude && company.longitude && (
+                        {(company.sCity || company.sZips.length > 0 || company.sArea || zipZones.length > 0 || coords) && (
                             <>
                                 <Separator />
-                                <div>
-                                    <h3 className="font-semibold text-sm mb-2">Service area</h3>
-                                    <CompanyMapLoader
-                                        latitude={company.latitude}
-                                        longitude={company.longitude}
-                                        radiusMeters={5000}
-                                    />
+                                <div className="space-y-3">
+                                    <h3 className="font-semibold text-sm">Service area</h3>
+                                    {company.sCity && (
+                                        <p className="text-sm text-muted-foreground">
+                                            {company.sCity}
+                                        </p>
+                                    )}
+                                    {company.sZips.length > 0 && (
+                                        <p className="text-sm text-muted-foreground">
+                                            ZIP: {company.sZips.join(", ")}
+                                        </p>
+                                    )}
+                                    {company.sArea && (
+                                        <p className="text-sm text-muted-foreground whitespace-pre-line">
+                                            {company.sArea}
+                                        </p>
+                                    )}
+                                    {zipZones.length > 0 ? (
+                                        <CompanyMapLoader
+                                            zones={zipZones}
+                                            radiusMeters={2500}
+                                        />
+                                    ) : coords ? (
+                                        <CompanyMapLoader
+                                            latitude={coords.latitude}
+                                            longitude={coords.longitude}
+                                            radiusMeters={5000}
+                                        />
+                                    ) : null}
                                 </div>
                             </>
                         )}

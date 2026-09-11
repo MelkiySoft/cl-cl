@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-08T09:57:39.445Z
+> Последнее обновление: 2026-09-11T07:14:27.739Z
 
 ```text
 ├── actions/
@@ -61,7 +61,11 @@
 │   │   │   └── [...nextauth]/
 │   │   │       └── route.ts
 │   │   └── geo/
-│   │       └── zip/
+│   │       ├── cities/
+│   │       │   └── route.ts
+│   │       ├── zip/
+│   │       │   └── route.ts
+│   │       └── zips/
 │   │           └── route.ts
 │   ├── 111page.tsx
 │   ├── favicon.ico
@@ -84,6 +88,7 @@
 │   │       ├── company-gallery.tsx
 │   │       ├── company-hours-fields.tsx
 │   │       ├── company-links-fields.tsx
+│   │       ├── company-location-fields.tsx
 │   │       ├── create-company-form.tsx
 │   │       └── edit-company-form.tsx
 │   ├── site/

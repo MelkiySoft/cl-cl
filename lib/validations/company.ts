@@ -132,6 +132,32 @@ export const companyFormSchema = z
             (value) => (value === "" || value === undefined ? null : value),
             z.enum(BUSINESS_STRUCTURES).nullable()
         ),
+        hqAddressLine1: z.string().max(160).optional().transform(emptyToUndef),
+        hqCity: z.string().max(80).optional().transform(emptyToUndef),
+        hqState: z
+            .string()
+            .max(2)
+            .optional()
+            .transform((v) => {
+                const s = emptyToUndef(v)
+                return s ? s.toUpperCase() : undefined
+            }),
+        hqZip: z
+            .string()
+            .optional()
+            .transform((v) => {
+                const digits = v?.replace(/\D/g, "") ?? ""
+                return digits.length >= 5 ? digits.slice(0, 5) : undefined
+            }),
+        sCity: z
+            .string()
+            .trim()
+            .min(3, "Select a service city")
+            .regex(/^.+\s+[A-Za-z]{2}$/, "Use format: Chicago IL"),
+        sZips: z
+            .array(z.string().regex(/^\d{5}$/, "ZIP must be 5 digits"))
+            .min(1, "Add at least one service ZIP"),
+        sArea: z.string().max(2000).optional().transform(emptyToUndef),
         hoursMode: z.enum(["weekly", "always_open", "by_appointment"]),
         hoursNote: z
             .string()

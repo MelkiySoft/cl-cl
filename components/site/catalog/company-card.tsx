@@ -11,7 +11,7 @@ type CompanyCardProps = {
 }
 
 export function CompanyCard({ company, priority = false }: CompanyCardProps) {
-    const location = [company.city, company.state].filter(Boolean).join(", ")
+    const location = company.sCity ?? ""
 
     return (
         <AppLink href={`/company/${company.slug}`} className="group block h-full">

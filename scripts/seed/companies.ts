@@ -1,5 +1,4 @@
 import { eq, inArray } from "drizzle-orm"
-import { geoUsa } from "@/db/schema"
 import { db } from "@/db"
 import {
     users,
@@ -92,28 +91,6 @@ export async function seedCompanies() {
     const imageValues: { companyIndex: number; image: string }[] = []
     const categoryLinks: { companyIndex: number; categoryId: number }[] = []
 
-    // ZIP'ы, которые используем в CITIES
-    const zips = CITIES.map((c) => c.zip)
-    const geoRows = await db.query.geoUsa.findMany({
-        where: inArray(geoUsa.zip, zips),
-        columns: {
-            zip: true,
-            cityLat: true,
-            cityLng: true,
-            zctaLat: true,
-            zctaLng: true,
-        },
-    })
-    const geoByZip = new Map(
-        geoRows.map((g) => [
-            g.zip,
-            {
-                lat: String(g.cityLat ?? g.zctaLat ?? ""),
-                lng: String(g.cityLng ?? g.zctaLng ?? ""),
-            },
-        ])
-    )
-
     for (let i = 1; i <= FAKE_COMPANIES_COUNT; i++) {
         const providerEmail = PROVIDER_EMAILS[(i - 1) % PROVIDER_EMAILS.length]
         const provider = providerByEmail[providerEmail]
@@ -123,8 +100,6 @@ export async function seedCompanies() {
         const location = pick(CITIES)
         const image = pick(IMAGES)
         const num = String(i).padStart(3, "0")
-        const geo = geoByZip.get(location.zip)
-
         companyValues.push({
             userId: provider.id,
             entityType: "company" as const,
@@ -145,13 +120,13 @@ export async function seedCompanies() {
             isInsured: true,
             isBonded: i % 3 !== 0,
             isLicensed: i % 4 !== 0,
-            addressLine1: `${100 + (i % 900)} Main Street`,
-            city: location.city,
-            state: location.state,
-            zip: location.zip,
-            country: "US",
-            latitude: geo?.lat || null,
-            longitude: geo?.lng || null,
+            hqAddressLine1: `${100 + (i % 900)} Main Street`,
+            hqCity: location.city,
+            hqState: location.state,
+            hqZip: location.zip,
+            sCity: `${location.city} ${location.state}`,
+            sZips: [location.zip],
+            sArea: null,
             status: true,
             moderationStatus: "approved" as const,
             approvedAt: new Date(),

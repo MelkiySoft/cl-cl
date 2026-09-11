@@ -267,17 +267,16 @@ export const companies = pgTable("companies", {
         .default("weekly"),
     hoursNote: text("hours_note"),
 
-    // адрес (упрощённо, geo-таблицы — следующим шагом)
-    addressLine1: text("address_line1"),
-    addressLine2: text("address_line2"),
-    city: text("city"),
-    state: text("state"), // CA, NY, TX...
-    zip: text("zip"),
-    country: text("country").notNull().default("US"),
+    // headquarters (временная упрощённая схема)
+    hqAddressLine1: text("hq_address_line1"),
+    hqCity: text("hq_city"),
+    hqState: text("hq_state"),
+    hqZip: text("hq_zip"),
 
-    // координаты (для карты позже)
-    latitude: text("latitude"), // или numeric — пока text/null
-    longitude: text("longitude"),
+    // service area (временная упрощённая схема)
+    sCity: text("s_city"),
+    sZips: jsonb("s_zips").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    sArea: text("s_area"),
 
     // каталог / модерация
     status: boolean("status").notNull().default(false), // показывать в каталоге
@@ -294,7 +293,11 @@ export const companies = pgTable("companies", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     approvedAt: timestamp("approved_at", { mode: "date" }),
-});
+}, (t) => [
+    index("idx_companies_hq_zip").on(t.hqZip),
+    index("idx_companies_s_city").on(t.sCity),
+    index("idx_companies_s_zips").using("gin", t.sZips),
+]);
 
 // company_images
 export const companyImages = pgTable("company_images",{

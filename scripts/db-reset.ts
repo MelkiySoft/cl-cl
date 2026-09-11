@@ -30,6 +30,8 @@ async function main() {
     await run("pnpm", ["db:seed"]);
 
     console.log("🎉 Database reset completed\n");
+
+    process.exit(0);
 }
 
 main().catch((err) => {

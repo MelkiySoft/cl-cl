@@ -216,13 +216,27 @@ export const companyLinkTypeEnum = [
 ] as const;
 export type CompanyLinkType = (typeof companyLinkTypeEnum)[number];
 
+export const companySourceEnum = ["registered", "imported", "seed"] as const;
+export type CompanySource = (typeof companySourceEnum)[number];
+
 export const companies = pgTable("companies", {
     id: serial("id").primaryKey(),
 
-    // владелец (provider)
+    // владелец (provider); null = бесхозная / ещё не заклеймленная карточка
     userId: text("user_id")
+        .references(() => users.id, { onDelete: "set null" }),
+
+    // происхождение записи (не менять при claim)
+    source: text("source")
+        .$type<CompanySource>()
         .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
+        .default("registered"),
+
+    // стабильный id во внешнем источнике импорта
+    externalId: text("external_id"),
+
+    // когда карточке впервые назначили владельца
+    claimedAt: timestamp("claimed_at", { mode: "date" }),
 
     // человек или компания
     entityType: text("entity_type")
@@ -294,6 +308,9 @@ export const companies = pgTable("companies", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     approvedAt: timestamp("approved_at", { mode: "date" }),
 }, (t) => [
+    index("idx_companies_user_id").on(t.userId),
+    index("idx_companies_source").on(t.source),
+    index("idx_companies_external_id").on(t.externalId),
     index("idx_companies_hq_zip").on(t.hqZip),
     index("idx_companies_s_city").on(t.sCity),
     index("idx_companies_s_zips").using("gin", t.sZips),
@@ -708,10 +725,10 @@ export const companyAttributes = pgTable(
         check(
             "company_attributes_one_value",
             sql`(
-                (${t.valueId} is not null)::int +
-                (${t.valueBoolean} is not null)::int +
-                (${t.valueNumber} is not null)::int
-            ) = 1`
+                    (${t.valueId} is not null)::int +
+                        (${t.valueBoolean} is not null)::int +
+                        (${t.valueNumber} is not null)::int
+                ) = 1`
         ),
         // boolean / number: одна строка на компанию+атрибут (value_id IS NULL)
         uniqueIndex("uq_company_attributes_scalar")

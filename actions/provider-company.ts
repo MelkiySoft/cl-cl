@@ -117,6 +117,9 @@ export async function createCompany(    data: CompanyCreateValues): Promise<Comp
             .insert(companies)
             .values({
                 userId: session.user.id,
+                source: "registered",
+                externalId: null,
+                claimedAt: null,
                 name: data.name,
                 legalName: data.legalName,
                 dbaName: data.dbaName ?? null,

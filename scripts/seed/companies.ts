@@ -102,6 +102,9 @@ export async function seedCompanies() {
         const num = String(i).padStart(3, "0")
         companyValues.push({
             userId: provider.id,
+            source: "seed" as const,
+            externalId: null,
+            claimedAt: null,
             entityType: "company" as const,
             legalName: `Company Name ${i} LLC`,
             dbaName: `Company Name ${i}`,

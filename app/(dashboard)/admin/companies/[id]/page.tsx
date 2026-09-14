@@ -2,17 +2,35 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AppLink } from "@/components/ui/app-link";
-import { getAdminCompanyById } from "@/actions/admin-companies";
+import {
+    getAdminCompanyById,
+    getAdminProviderOptions,
+} from "@/actions/admin-companies";
+import {
+    getCompanyAttributesForEdit,
+    getCompanyDocuments,
+    getCompanyForEdit,
+    getCompanyHoursForEdit,
+    getCompanyImages,
+    getCompanyLinksForEdit,
+} from "@/actions/provider-company";
+import { CompanyOwnerForm } from "@/components/dashboard/admin/company-owner-form";
+import { CompanyModerationForm } from "@/components/dashboard/admin/company-moderation-form";
 import {
     CompanyStatusBadge,
     SourceBadge,
 } from "@/components/dashboard/admin/status-badge";
+import { EditCompanyForm } from "@/components/dashboard/provider/edit-company-form";
 import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import {
+    getCompanyLeafSelection,
+    getLeafOptions,
+} from "@/lib/provider-categories";
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -27,19 +45,6 @@ function formatDate(value: Date | null) {
     });
 }
 
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div>
-            <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                {label}
-            </dt>
-            <dd className="mt-1 break-words">
-                {value === null || value === undefined || value === "" ? "—" : value}
-            </dd>
-        </div>
-    );
-}
-
 export default async function AdminCompanyPage({ params }: Props) {
     const { id } = await params;
     const companyId = Number(id);
@@ -48,11 +53,36 @@ export default async function AdminCompanyPage({ params }: Props) {
         notFound();
     }
 
-    const company = await getAdminCompanyById(companyId);
-    if (!company) notFound();
+    const [
+        adminCompany,
+        company,
+        images,
+        documents,
+        leaves,
+        categorySelection,
+        hours,
+        links,
+        attributeState,
+        providers,
+    ] = await Promise.all([
+        getAdminCompanyById(companyId),
+        getCompanyForEdit(companyId),
+        getCompanyImages(companyId),
+        getCompanyDocuments(companyId),
+        getLeafOptions(),
+        getCompanyLeafSelection(companyId),
+        getCompanyHoursForEdit(companyId),
+        getCompanyLinksForEdit(companyId),
+        getCompanyAttributesForEdit(companyId),
+        getAdminProviderOptions(),
+    ]);
+
+    if (!adminCompany || !company) {
+        notFound();
+    }
 
     return (
-        <div className="space-y-6 max-w-5xl">
+        <div className="space-y-8 max-w-7xl">
             <div>
                 <AppLink
                     href="/admin/companies"
@@ -64,132 +94,86 @@ export default async function AdminCompanyPage({ params }: Props) {
 
                 <div className="flex flex-wrap items-center gap-3">
                     <h1 className="text-2xl font-semibold tracking-tight">
-                        {company.name}
+                        {adminCompany.name}
                     </h1>
-                    <SourceBadge source={company.source} />
+                    <SourceBadge source={adminCompany.source} />
                     <CompanyStatusBadge
-                        moderationStatus={company.moderationStatus}
-                        status={company.status}
+                        moderationStatus={adminCompany.moderationStatus}
+                        status={adminCompany.status}
                     />
                 </div>
-                <p className="mt-1 text-muted-foreground">/{company.slug}</p>
+                <p className="mt-1 text-muted-foreground">/{adminCompany.slug}</p>
+                {adminCompany.status && adminCompany.moderationStatus === "approved" && (
+                    <AppLink
+                        href={`/company/${adminCompany.slug}`}
+                        className="mt-2 inline-block text-sm underline underline-offset-4"
+                    >
+                        Open public page
+                    </AppLink>
+                )}
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Owner</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {company.owner ? (
-                        <div className="space-y-1">
-                            <AppLink
-                                href={`/admin/users/${company.owner.id}`}
-                                className="font-medium hover:underline"
-                            >
-                                {company.owner.name || company.owner.email}
-                            </AppLink>
-                            <div className="text-sm text-muted-foreground">
-                                {company.owner.email} · {company.owner.role}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                                Claimed at: {formatDate(company.claimedAt)}
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground">Unclaimed — no user attached</p>
-                    )}
-                </CardContent>
-            </Card>
+            <CompanyOwnerForm
+                companyId={companyId}
+                claimedAt={adminCompany.claimedAt}
+                owner={adminCompany.owner}
+                providers={providers}
+            />
+
+            <CompanyModerationForm
+                companyId={companyId}
+                status={adminCompany.status}
+                moderationStatus={adminCompany.moderationStatus}
+                moderationNote={adminCompany.moderationNote}
+            />
 
             <Card>
                 <CardHeader>
                     <CardTitle>Record</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <dl className="grid gap-3 sm:grid-cols-2">
-                        <Field label="Source" value={company.source} />
-                        <Field label="External ID" value={company.externalId} />
-                        <Field label="Entity type" value={company.entityType} />
-                        <Field label="Legal name" value={company.legalName} />
-                        <Field label="DBA" value={company.dbaName} />
-                        <Field label="EIN" value={company.ein} />
-                        <Field label="Year founded" value={company.yearFounded} />
-                        <Field label="Employees" value={company.employeesCount} />
-                        <Field label="Created" value={formatDate(company.createdAt)} />
-                        <Field label="Updated" value={formatDate(company.updatedAt)} />
-                        <Field label="Approved" value={formatDate(company.approvedAt)} />
-                        <Field label="Views" value={company.viewed} />
+                    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div>
+                            <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Source
+                            </dt>
+                            <dd className="mt-1 capitalize">{adminCompany.source}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                                External ID
+                            </dt>
+                            <dd className="mt-1 break-all">
+                                {adminCompany.externalId || "—"}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Created
+                            </dt>
+                            <dd className="mt-1">{formatDate(adminCompany.createdAt)}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Views
+                            </dt>
+                            <dd className="mt-1">{adminCompany.viewed}</dd>
+                        </div>
                     </dl>
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Contacts and area</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <dl className="grid gap-3 sm:grid-cols-2">
-                        <Field label="Phone" value={company.phone} />
-                        <Field label="Email" value={company.email} />
-                        <Field
-                            label="Headquarters"
-                            value={[
-                                company.hqAddressLine1,
-                                company.hqCity,
-                                company.hqState,
-                                company.hqZip,
-                            ]
-                                .filter(Boolean)
-                                .join(", ")}
-                        />
-                        <Field label="Service city" value={company.sCity} />
-                        <Field
-                            label="Service ZIPs"
-                            value={company.sZips.length > 0 ? company.sZips.join(", ") : "—"}
-                        />
-                        <Field label="Service area" value={company.sArea} />
-                    </dl>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Moderation</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <dl className="grid gap-3 sm:grid-cols-2">
-                        <Field
-                            label="Catalog visibility"
-                            value={company.status ? "Live" : "Hidden"}
-                        />
-                        <Field label="Moderation status" value={company.moderationStatus} />
-                        <Field
-                            label="Insured / bonded / licensed"
-                            value={[
-                                company.isInsured ? "Insured" : null,
-                                company.isBonded ? "Bonded" : null,
-                                company.isLicensed ? "Licensed" : null,
-                            ]
-                                .filter(Boolean)
-                                .join(" · ") || "—"}
-                        />
-                        <Field label="Moderation note" value={company.moderationNote} />
-                    </dl>
-                    {company.description && (
-                        <p className="mt-4 whitespace-pre-wrap text-sm text-muted-foreground">
-                            {company.description}
-                        </p>
-                    )}
-                    {company.status && company.moderationStatus === "approved" && (
-                        <AppLink
-                            href={`/company/${company.slug}`}
-                            className="mt-4 inline-block text-sm underline underline-offset-4"
-                        >
-                            Open public page
-                        </AppLink>
-                    )}
-                </CardContent>
-            </Card>
+            <EditCompanyForm
+                company={company}
+                images={images}
+                documents={documents}
+                leaves={leaves}
+                categorySelection={categorySelection}
+                hours={hours}
+                links={links}
+                attributeDefinitions={attributeState.definitions}
+                attributeValues={attributeState.values}
+            />
         </div>
     );
 }

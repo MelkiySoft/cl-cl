@@ -1,8 +1,9 @@
 "use server";
 
-import { and, count, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
 
 import { requireAdmin, ADMIN_PAGE_SIZE } from "@/lib/admin";
+import { revalidateCompanyPaths } from "@/lib/company-access";
 import { db } from "@/db";
 import {
     companies,
@@ -284,4 +285,167 @@ export async function getAdminOverview() {
         unclaimed: Number(unclaimedRow?.total ?? 0),
         pending: Number(pendingRow?.total ?? 0),
     };
+}
+
+export type AdminActionState = {
+    error?: string;
+    success?: boolean;
+};
+
+export type AdminProviderOption = {
+    id: string;
+    name: string | null;
+    email: string;
+};
+
+export async function getAdminProviderOptions(): Promise<AdminProviderOption[]> {
+    const session = await requireAdmin();
+    if (!session) return [];
+
+    return db.query.users.findMany({
+        where: eq(users.role, "provider"),
+        columns: {
+            id: true,
+            name: true,
+            email: true,
+        },
+        orderBy: [asc(users.email)],
+        limit: 500,
+    });
+}
+
+export async function updateAdminCompanyOwner(input: {
+    companyId: number;
+    userId: string | null;
+}): Promise<AdminActionState> {
+    const session = await requireAdmin();
+    if (!session) return { error: "Unauthorized" };
+
+    const companyId = input.companyId;
+    if (!companyId || Number.isNaN(companyId)) {
+        return { error: "Invalid company id" };
+    }
+
+    const existing = await db.query.companies.findFirst({
+        where: eq(companies.id, companyId),
+        columns: {
+            id: true,
+            slug: true,
+            userId: true,
+            claimedAt: true,
+        },
+    });
+
+    if (!existing) {
+        return { error: "Company not found" };
+    }
+
+    const nextUserId = input.userId?.trim() ? input.userId.trim() : null;
+
+    if (nextUserId) {
+        const owner = await db.query.users.findFirst({
+            where: eq(users.id, nextUserId),
+            columns: { id: true, role: true },
+        });
+
+        if (!owner) {
+            return { error: "User not found" };
+        }
+
+        if (owner.role !== "provider") {
+            return { error: "Owner must be a provider" };
+        }
+    }
+
+    const claimedAt =
+        nextUserId && !existing.claimedAt ? new Date() : existing.claimedAt;
+
+    try {
+        await db
+            .update(companies)
+            .set({
+                userId: nextUserId,
+                claimedAt,
+                updatedAt: new Date(),
+            })
+            .where(eq(companies.id, companyId));
+
+        revalidateCompanyPaths({
+            companyId,
+            slug: existing.slug,
+            ownerId: existing.userId,
+        });
+        if (nextUserId && nextUserId !== existing.userId) {
+            revalidateCompanyPaths({ companyId, ownerId: nextUserId });
+        }
+
+        return { success: true };
+    } catch (err) {
+        console.error("updateAdminCompanyOwner error:", err);
+        return { error: "Failed to update owner" };
+    }
+}
+
+export async function updateAdminCompanyModeration(input: {
+    companyId: number;
+    status: boolean;
+    moderationStatus: ModerationStatus;
+    moderationNote: string | null;
+}): Promise<AdminActionState> {
+    const session = await requireAdmin();
+    if (!session) return { error: "Unauthorized" };
+
+    const companyId = input.companyId;
+    if (!companyId || Number.isNaN(companyId)) {
+        return { error: "Invalid company id" };
+    }
+
+    if (!isModerationStatus(input.moderationStatus)) {
+        return { error: "Invalid moderation status" };
+    }
+
+    const existing = await db.query.companies.findFirst({
+        where: eq(companies.id, companyId),
+        columns: {
+            id: true,
+            slug: true,
+            userId: true,
+            approvedAt: true,
+            moderationStatus: true,
+        },
+    });
+
+    if (!existing) {
+        return { error: "Company not found" };
+    }
+
+    const note = input.moderationNote?.trim() ? input.moderationNote.trim() : null;
+    const approvedAt =
+        input.moderationStatus === "approved" && !existing.approvedAt
+            ? new Date()
+            : existing.approvedAt;
+
+    try {
+        await db
+            .update(companies)
+            .set({
+                status: input.status,
+                moderationStatus: input.moderationStatus,
+                moderationNote: note,
+                approvedAt,
+                updatedAt: new Date(),
+            })
+            .where(eq(companies.id, companyId));
+
+        revalidateCompanyPaths({
+            companyId,
+            slug: existing.slug,
+            ownerId: existing.userId,
+        });
+
+        return { success: true };
+    } catch (err) {
+        console.error("updateAdminCompanyModeration error:", err);
+        return { error: "Failed to update moderation" };
+    }
 }

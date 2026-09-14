@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-14T05:25:06.738Z
+> Последнее обновление: 2026-09-14T09:16:35.435Z
 
 ```text
 ├── actions/
@@ -87,6 +87,8 @@
 │   │   ├── account/
 │   │   │   └── account-form.tsx
 │   │   ├── admin/
+│   │   │   ├── company-moderation-form.tsx
+│   │   │   ├── company-owner-form.tsx
 │   │   │   └── status-badge.tsx
 │   │   ├── customer/
 │   │   ├── layout/
@@ -175,6 +177,7 @@
 │   ├── catalog-path.ts
 │   ├── categories.ts
 │   ├── companies.ts
+│   ├── company-access.ts
 │   ├── company-attributes-db.ts
 │   ├── company-attributes.ts
 │   ├── company-hours.ts

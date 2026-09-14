@@ -29,6 +29,7 @@ import {
     deletePrivateFile,
 } from "@/lib/r2";
 import { slugify } from "@/lib/utils";
+import { companyAccessWhere, revalidateCompanyPaths } from "@/lib/company-access";
 import { formatServiceCityLabel, getGeoCityByExactLabel, getPublicCityByZip, normalizeZip } from "@/lib/geo";
 
 import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
@@ -145,16 +146,13 @@ export async function createCompany(    data: CompanyCreateValues): Promise<Comp
     redirect(`/provider/company/${createdId}`);
 }
 
-/** Получить компанию для редактирования (только свою) */
+/** Получить компанию для редактирования (свою или любую для admin) */
 export async function getCompanyForEdit(id: number) {
     const session = await auth();
     if (!session?.user?.id) return null;
 
     const company = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, id),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(id, session),
     });
 
     return company ?? null;
@@ -174,10 +172,7 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
 
     // Проверяем, что компания принадлежит текущему пользователю
     const existing = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, id),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(id, session),
         columns: { id: true, slug: true },
     });
 
@@ -247,12 +242,7 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
                 sArea: data.sArea ?? null,
                 updatedAt: new Date(),
             })
-            .where(
-                and(
-                    eq(companies.id, id),
-                    eq(companies.userId, session.user.id)
-                )
-            );
+            .where(companyAccessWhere(id, session));
 
         // --- Categories ---
         const leafIds = [
@@ -319,9 +309,7 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
             );
         }
 
-        revalidatePath("/provider/company");
-        revalidatePath(`/provider/company/${id}`);
-        revalidatePath(`/company/${existing.slug}`);
+        revalidateCompanyPaths({ companyId: id, slug: existing.slug });
 
         return { success: true };
     } catch (err) {
@@ -336,10 +324,7 @@ export async function getCompanyHoursForEdit(companyId: number) {
     if (!session?.user?.id) return emptyWeeklyHours();
 
     const company = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, companyId),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) return emptyWeeklyHours();
@@ -374,10 +359,7 @@ export async function getCompanyLinksForEdit(companyId: number) {
     if (!session?.user?.id) return [];
 
     const company = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, companyId),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) return [];
@@ -436,10 +418,7 @@ export async function getCompanyAttributesForEdit(companyId: number) {
     }
 
     const company = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, companyId),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) {
@@ -481,10 +460,7 @@ export async function getCompanyImages(companyId: number) {
     if (!session?.user?.id) return [];
 
     const company = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, companyId),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) return [];
@@ -517,10 +493,7 @@ export async function addCompanyImage( companyId: number, imageUrl: string): Pro
     }
 
     const company = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, companyId),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) {
@@ -556,7 +529,7 @@ export async function addCompanyImage( companyId: number, imageUrl: string): Pro
                 sortOrder: companyImages.sortOrder,
             });
 
-        revalidatePath(`/provider/company/${companyId}`);
+        revalidateCompanyPaths({ companyId });
         return { success: true, image: row };
     } catch (err) {
         console.error("addCompanyImage error:", err);
@@ -576,10 +549,7 @@ export async function deleteCompanyImage( companyId: number, imageId: number ): 
     }
 
     const company = await db.query.companies.findFirst({
-        where: and(
-            eq(companies.id, companyId),
-            eq(companies.userId, session.user.id)
-        ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) {
@@ -596,7 +566,7 @@ export async function deleteCompanyImage( companyId: number, imageId: number ): 
                 )
             );
 
-        revalidatePath(`/provider/company/${companyId}`);
+        revalidateCompanyPaths({ companyId });
         return { success: true };
     } catch (err) {
         console.error("deleteCompanyImage error:", err);
@@ -626,13 +596,7 @@ export async function getCompanyDocuments(companyId: number) {
     if (!session?.user?.id) return [];
 
     const company = await db.query.companies.findFirst({
-        where:
-            session.user.role === "admin"
-                ? eq(companies.id, companyId)
-                : and(
-                    eq(companies.id, companyId),
-                    eq(companies.userId, session.user.id)
-                ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) return [];
@@ -669,13 +633,7 @@ export async function saveCompanyDocument(input: {
     }
 
     const company = await db.query.companies.findFirst({
-        where:
-            session.user.role === "admin"
-                ? eq(companies.id, input.companyId)
-                : and(
-                    eq(companies.id, input.companyId),
-                    eq(companies.userId, session.user.id)
-                ),
+        where: companyAccessWhere(input.companyId, session),
         columns: { id: true },
     });
     if (!company) {
@@ -704,7 +662,7 @@ export async function saveCompanyDocument(input: {
                 uploadedAt: companyDocuments.uploadedAt,
             });
 
-        revalidatePath(`/provider/company/${input.companyId}`);
+        revalidateCompanyPaths({ companyId: input.companyId });
         return { success: true, document: row };
     } catch (err) {
         console.error("saveCompanyDocument error:", err);
@@ -723,13 +681,7 @@ export async function getDocumentDownloadUrl(
     }
 
     const company = await db.query.companies.findFirst({
-        where:
-            session.user.role === "admin"
-                ? eq(companies.id, companyId)
-                : and(
-                    eq(companies.id, companyId),
-                    eq(companies.userId, session.user.id)
-                ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) {
@@ -767,13 +719,7 @@ export async function deleteCompanyDocument(
     }
 
     const company = await db.query.companies.findFirst({
-        where:
-            session.user.role === "admin"
-                ? eq(companies.id, companyId)
-                : and(
-                    eq(companies.id, companyId),
-                    eq(companies.userId, session.user.id)
-                ),
+        where: companyAccessWhere(companyId, session),
         columns: { id: true },
     });
     if (!company) {
@@ -797,7 +743,7 @@ export async function deleteCompanyDocument(
             .delete(companyDocuments)
             .where(eq(companyDocuments.id, documentId));
 
-        revalidatePath(`/provider/company/${companyId}`);
+        revalidateCompanyPaths({ companyId });
         return { success: true };
     } catch (err) {
         console.error("deleteCompanyDocument error:", err);

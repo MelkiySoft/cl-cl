@@ -2,11 +2,13 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-11T14:15:59.160Z
+> Последнее обновление: 2026-09-14T05:25:06.738Z
 
 ```text
 ├── actions/
 │   ├── account.ts
+│   ├── admin-companies.ts
+│   ├── admin-users.ts
 │   ├── auth.ts
 │   ├── provider-company.ts
 │   └── upload.ts
@@ -24,6 +26,15 @@
 │   │   ├── account/
 │   │   │   └── page.tsx
 │   │   ├── admin/
+│   │   │   ├── companies/
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── users/
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── layout.tsx
 │   │   │   └── page.tsx
 │   │   ├── customer/
 │   │   │   └── page.tsx
@@ -76,6 +87,7 @@
 │   │   ├── account/
 │   │   │   └── account-form.tsx
 │   │   ├── admin/
+│   │   │   └── status-badge.tsx
 │   │   ├── customer/
 │   │   ├── layout/
 │   │   │   ├── header.tsx
@@ -155,6 +167,7 @@
 ├── lib/
 │   ├── validations/
 │   │   └── company.ts
+│   ├── admin.ts
 │   ├── articles.ts
 │   ├── attributes.ts
 │   ├── auth.ts

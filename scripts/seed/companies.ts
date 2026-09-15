@@ -59,7 +59,24 @@ const NAME_PREFIXES = [
     "Lakeside",
 ]
 
-const NAME_SUFFIXES = [
+const NAME_SUFFIXES_BY_ROOT_SLUG: Record<string, string[]> = {
+    "house-cleaning": ["Cleaning", "Maids", "Home Care", "Clean Co", "Shine"],
+    "commercial-cleaning": ["Janitorial", "Facility Services", "Cleaning", "Clean Co"],
+    "maid-service": ["Maids", "Home Care", "Shine"],
+    "upholstery-cleaning": ["Cleaning", "Shine"],
+    "air-duct-cleaning": ["Cleaning", "Facility Services"],
+    "mold-remediation": ["Cleaning", "Facility Services"],
+    "pest-control": ["Pest Pros", "Facility Services"],
+    "pool-cleaning": ["Pool Care", "Shine"],
+    "cleaning-outside": ["Cleaning", "Shine", "Clean Co"],
+    "vehicle-equipment-cleaning": ["Detailing", "Shine"],
+    "junk-removal": ["Junk Hauling", "Clean Co"],
+    "sewer-cleaning": ["Cleaning", "Facility Services"],
+    laundry: ["Laundry", "Clean Co"],
+    "dry-cleaning": ["Dry Cleaning", "Clean Co"],
+}
+
+const DEFAULT_NAME_SUFFIXES = [
     "Cleaning",
     "Maids",
     "Janitorial",
@@ -142,6 +159,13 @@ const LINK_TYPES = [
     "linkedin",
 ] as const
 
+type SeedCategoryRow = {
+    id: number
+    parentId: number | null
+    slug: string
+    name: string
+}
+
 // ============================================================
 
 function pick<T>(arr: T[]): T {
@@ -162,6 +186,13 @@ function pickSome<T>(arr: T[], min: number, max: number): T[] {
 function unique<T>(items: T[]): T[] {
     return [...new Set(items)]
 }
+
+function suffixForRoot(rootSlug: string, index: number): string {
+    const list = NAME_SUFFIXES_BY_ROOT_SLUG[rootSlug] ?? DEFAULT_NAME_SUFFIXES
+    return list[index % list.length]
+}
+
+// ============================================================
 
 export async function seedCompanies() {
     console.log("→ Seeding companies...")
@@ -187,7 +218,7 @@ export async function seedCompanies() {
 
     const allCategories = await db.query.categories.findMany({
         where: eq(categories.status, true),
-        columns: { id: true, parentId: true, slug: true },
+        columns: { id: true, parentId: true, slug: true, name: true },
     })
 
     if (allCategories.length === 0) {
@@ -207,6 +238,8 @@ export async function seedCompanies() {
         return
     }
 
+    const categoryById = new Map(allCategories.map((category) => [category.id, category]))
+
     const paths = await db.query.categoryPath.findMany()
     const pathIdsByCategory = new Map<number, number[]>()
     const rootByCategory = new Map<number, number>()
@@ -220,7 +253,7 @@ export async function seedCompanies() {
         }
     }
 
-    const leavesByRoot = new Map<number, typeof leaves>()
+    const leavesByRoot = new Map<number, SeedCategoryRow[]>()
     for (const leaf of leaves) {
         const rootId = rootByCategory.get(leaf.id) ?? leaf.id
         const list = leavesByRoot.get(rootId) ?? []
@@ -229,7 +262,7 @@ export async function seedCompanies() {
     }
 
     console.log(
-        `  • Generating ${FAKE_COMPANIES_COUNT} companies (${OWNED_COMPANIES_COUNT} owned, ${UNCLAIMED_COMPANIES_COUNT} unclaimed)...`
+        `  • Generating ${FAKE_COMPANIES_COUNT} companies (${OWNED_COMPANIES_COUNT} owned, ${UNCLAIMED_COMPANIES_COUNT} unclaimed) across ${leaves.length} leaf categories...`
     )
 
     const companyValues = []
@@ -270,14 +303,20 @@ export async function seedCompanies() {
         const location = CITIES[(i - 1) % CITIES.length]
         const image = IMAGES[(i - 1) % IMAGES.length]
         const prefix = NAME_PREFIXES[(i - 1) % NAME_PREFIXES.length]
-        const suffix = NAME_SUFFIXES[(i - 1) % NAME_SUFFIXES.length]
-        const displayName = `${prefix} ${suffix} ${i}`
         const entityType = i % 9 === 0 ? ("individual" as const) : ("company" as const)
         const hoursMode = HOURS_MODES[i % 11 === 0 ? 1 : i % 13 === 0 ? 2 : 0]
         const structure = BUSINESS_STRUCTURES[i % BUSINESS_STRUCTURES.length]
         const serviceZips = location.zips.slice(0, 1 + (i % location.zips.length))
         const pending = owned && i % 17 === 0
         const hidden = owned && i % 19 === 0
+
+        // Равномерно покрываем все листовые категории нового дерева
+        const mainLeaf = leaves[(i - 1) % leaves.length]
+        const rootId = rootByCategory.get(mainLeaf.id) ?? mainLeaf.id
+        const rootCategory = categoryById.get(rootId)
+        const rootSlug = rootCategory?.slug ?? mainLeaf.slug
+        const suffix = suffixForRoot(rootSlug, i - 1)
+        const displayName = `${prefix} ${suffix} ${i}`
 
         companyValues.push({
             userId: owned ? provider.id : null,
@@ -292,10 +331,10 @@ export async function seedCompanies() {
             dbaName: displayName,
             name: displayName,
             slug: `company-name-${i}`,
-            description: `${displayName} provides residential and commercial cleaning in ${location.city}, ${location.state}. Insured crews, eco-friendly options and flexible scheduling.`,
-            metaTitle: `${displayName} — Cleaning in ${location.city}, ${location.state}`,
-            metaDescription: `Book ${displayName} for house, office and specialty cleaning in ${location.city}.`,
-            metaKeyword: `cleaning, ${location.city}, ${displayName.toLowerCase()}`,
+            description: `${displayName} provides ${mainLeaf.name.toLowerCase()} in ${location.city}, ${location.state}. Insured crews and flexible scheduling.`,
+            metaTitle: `${displayName} — ${mainLeaf.name} in ${location.city}, ${location.state}`,
+            metaDescription: `Book ${displayName} for ${mainLeaf.name.toLowerCase()} in ${location.city}.`,
+            metaKeyword: `${mainLeaf.name.toLowerCase()}, ${location.city}, ${displayName.toLowerCase()}`,
             metaH1: `${displayName} in ${location.city}`,
             image,
             phone: `+1-555-${String(1000 + (i % 9000)).padStart(4, "0")}`,
@@ -331,8 +370,6 @@ export async function seedCompanies() {
 
         imageValues.push({ companyIndex: i - 1, image })
 
-        const mainLeaf = pick(leaves)
-        const rootId = rootByCategory.get(mainLeaf.id) ?? mainLeaf.id
         const sameRootLeaves = (leavesByRoot.get(rootId) ?? [mainLeaf]).filter(
             (leaf) => leaf.id !== mainLeaf.id
         )

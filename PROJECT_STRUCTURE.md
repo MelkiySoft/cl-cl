@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-14T09:16:35.435Z
+> Последнее обновление: 2026-09-15T10:23:34.102Z
 
 ```text
 ├── actions/
@@ -150,10 +150,13 @@
 ├── config/
 │   └── cities.ts
 ├── data/
-│   └── geo/
-│       ├── tl_2025_us_zcta520.csv
-│       ├── uscities.csv
-│       └── zips.json
+│   ├── geo/
+│   │   ├── tl_2025_us_zcta520.csv
+│   │   ├── uscities.csv
+│   │   └── zips.json
+│   └── import/
+│       └── companies/
+│           └── images/
 ├── db/
 │   ├── index.ts
 │   └── schema.ts

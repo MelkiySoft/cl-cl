@@ -223,6 +223,8 @@ export type CompanySort =
 
 export type CompaniesQuery = {
     categoryId: number | null
+    /** "Chicago IL" — основной фильтр города каталога */
+    sCity?: string | null
     zips?: string[]
     sort?: CompanySort
     limit?: number
@@ -243,6 +245,7 @@ const DEFAULT_SORT: CompanySort = "sort_order"
 export const getCompaniesByCategoryId = cache(
     async ({
                categoryId,
+               sCity,
                zips,
                sort = DEFAULT_SORT,
                limit = DEFAULT_LIMIT,
@@ -270,8 +273,10 @@ export const getCompaniesByCategoryId = cache(
             }
         })()
 
+        const cityLabel = sCity?.trim() || null
+
         const zipList =
-            zips && zips.length > 0
+            !cityLabel && zips && zips.length > 0
                 ? sql.join(
                     zips.map((zip) => sql`${zip}`),
                     sql`, `
@@ -287,8 +292,12 @@ export const getCompaniesByCategoryId = cache(
                 )`
                 : undefined
 
-        // город выбран, но ZIP нет — пустая выдача, не весь каталог
-        if (zips && zips.length === 0) {
+        const cityFilter = cityLabel
+            ? sql`lower(${companies.sCity}) = ${cityLabel.toLowerCase()}`
+            : zipFilter
+
+        // город выбран, но нет ни sCity, ни ZIP — пустая выдача, не весь каталог
+        if (!cityLabel && zips && zips.length === 0) {
             return {
                 companies: [],
                 total: 0,
@@ -301,7 +310,7 @@ export const getCompaniesByCategoryId = cache(
         const baseWhere = and(
             eq(companies.status, true),
             eq(companies.moderationStatus, "approved"),
-            zipFilter
+            cityFilter
         )
 
         // --- без категории (все) ---

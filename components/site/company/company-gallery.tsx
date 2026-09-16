@@ -31,7 +31,6 @@ export function CompanyGallery({ images, companyName }: CompanyGalleryProps) {
 
     return (
         <div className="space-y-3">
-            {/* Main image */}
             <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-muted">
                 <Image
                     key={active.image}
@@ -39,12 +38,11 @@ export function CompanyGallery({ images, companyName }: CompanyGalleryProps) {
                     alt={`${companyName} — photo ${activeIndex + 1}`}
                     fill
                     priority={activeIndex === 0}
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 66vw"
+                    className="object-contain p-2"
+                    sizes="(max-width: 1024px) 100vw, 900px"
                 />
             </div>
 
-            {/* Thumbnails */}
             {images.length > 1 && (
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                     {images.map((img, index) => (
@@ -53,7 +51,7 @@ export function CompanyGallery({ images, companyName }: CompanyGalleryProps) {
                             type="button"
                             onClick={() => setActiveIndex(index)}
                             className={cn(
-                                "relative aspect-square overflow-hidden rounded-lg bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                "relative aspect-[16/9] overflow-hidden rounded-lg bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                 activeIndex === index
                                     ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                                     : "opacity-70 hover:opacity-100"
@@ -65,8 +63,8 @@ export function CompanyGallery({ images, companyName }: CompanyGalleryProps) {
                                 src={img.image}
                                 alt=""
                                 fill
-                                className="object-cover"
-                                sizes="120px"
+                                className="object-contain p-1"
+                                sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, (max-width: 1024px) 16vw, 200px"
                             />
                         </button>
                     ))}

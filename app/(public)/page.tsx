@@ -18,7 +18,7 @@ export default function HomePage() {
             />
 
             <CompanyCarousel
-                title="Top in New York"
+                title="Top in Chicago"
                 companyIds={[6, 7, 9, 4, 10]}
                 autoplay
             />

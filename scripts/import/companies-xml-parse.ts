@@ -106,20 +106,34 @@ function cellText(cell: XmlEl): string {
     return (data?.text ?? cell.text ?? "").replace(/\r\n/g, "\n").trim();
 }
 
+export type ParsedXmlTable = {
+    /** header label by 1-based column */
+    headersByCol: Map<number, string>;
+    rows: Record<string, string>[];
+    /** cell text by 1-based column, parallel to rows */
+    rowCols: Array<Map<number, string>>;
+};
+
 /**
  * SpreadsheetML → rows of header→value.
  * Duplicate headers become "Категория", "Категория#2", ...
  */
 export function parseXml(xml: string): Record<string, string>[] {
+    return parseXmlTable(xml).rows;
+}
+
+export function parseXmlTable(xml: string): ParsedXmlTable {
     const tree = parseElements(xml);
     const table = findFirst(tree, "Table");
     if (!table) throw new Error("SpreadsheetML Table not found");
 
     const rows = childrenNamed(table, "Row");
-    if (rows.length === 0) return [];
+    if (rows.length === 0) {
+        return { headersByCol: new Map(), rows: [], rowCols: [] };
+    }
 
     const headerRow = rows[0];
-    const headers = new Map<number, string>();
+    const headersByCol = new Map<number, string>();
     const headerCount = new Map<string, number>();
     let col = 1;
     for (const cell of childrenNamed(headerRow, "Cell")) {
@@ -129,26 +143,33 @@ export function parseXml(xml: string): Record<string, string>[] {
         if (raw) {
             const seen = headerCount.get(raw) ?? 0;
             headerCount.set(raw, seen + 1);
-            headers.set(col, seen === 0 ? raw : `${raw}#${seen + 1}`);
+            headersByCol.set(col, seen === 0 ? raw : `${raw}#${seen + 1}`);
         }
         col += 1;
     }
 
     const out: Record<string, string>[] = [];
+    const rowCols: Array<Map<number, string>> = [];
     for (const row of rows.slice(1)) {
         const rec: Record<string, string> = {};
+        const cols = new Map<number, string>();
         col = 1;
         for (const cell of childrenNamed(row, "Cell")) {
             const idx = attrIndex(cell);
             if (idx) col = idx;
-            const header = headers.get(col);
-            if (header) rec[header] = cellText(cell);
+            const text = cellText(cell);
+            cols.set(col, text);
+            const header = headersByCol.get(col);
+            if (header) rec[header] = text;
             col += 1;
         }
-        if (Object.values(rec).some((v) => v.trim())) out.push(rec);
+        if (Object.values(rec).some((v) => v.trim())) {
+            out.push(rec);
+            rowCols.push(cols);
+        }
     }
 
-    return out;
+    return { headersByCol, rows: out, rowCols };
 }
 
 export const SS_NS = SS;

@@ -1,5 +1,21 @@
 import type { CompanyLinkType, HoursMode } from "@/db/schema";
 
+/** ZWSP / BOM / soft hyphen и прочий format-мусор из Excel. */
+const INVISIBLE_CHARS = /[\u200B-\u200D\u2060\uFEFF\u00AD]/g;
+
+export function sanitizeImportText(raw: string): string {
+    return raw.replace(INVISIBLE_CHARS, "").replace(/\u00A0/g, " ").normalize("NFKC");
+}
+
+export function normKey(value: string): string {
+    return sanitizeImportText(value)
+        .toLowerCase()
+        .replace(/[’']/g, "")
+        .replace(/[^a-z0-9\u0400-\u04ff+]+/g, " ")
+        .trim()
+        .replace(/\s+/g, " ");
+}
+
 const CATEGORY_ALIASES: Array<[string, string]> = [
     ["House cleaning", "house-cleaning"],
     ["Deep cleaning", "deep-cleaning"],
@@ -207,22 +223,12 @@ const STATE_BY_NAME: Record<string, string> = {
 const STREET_SUFFIX =
     "ave|avenue|st|street|rd|road|dr|drive|blvd|boulevard|pkwy|parkway|ln|lane|ct|court|way|hwy|highway|pl|place|cir|circle|trl|trail|ter|terrace";
 
-export function normKey(value: string): string {
-    return value
-        .normalize("NFKC")
-        .toLowerCase()
-        .replace(/[’']/g, "")
-        .replace(/[^a-z0-9\u0400-\u04ff+]+/g, " ")
-        .trim()
-        .replace(/\s+/g, " ");
-}
-
 export function compactKey(value: string): string {
     return normKey(value).replace(/\s+/g, "");
 }
 
 export function splitList(value: string): string[] {
-    return value
+    return sanitizeImportText(value)
         .split(";")
         .map((part) => part.trim())
         .filter(Boolean);
@@ -462,20 +468,57 @@ export function cleanUrl(raw: string): string | null {
     }
 }
 
+/** Google Maps share-ссылки держат place id в query — search не режем. */
+export function cleanMapsUrl(raw: string): string | null {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+        const url = new URL(withProto);
+        if (!url.hostname) return null;
+        url.hash = "";
+        return url.toString();
+    } catch {
+        return null;
+    }
+}
+
 export function isLikelyEmail(raw: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.trim());
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizeImportText(raw).trim());
+}
+
+/** Несколько адресов в ячейке через ; или , — берём первый валидный. */
+export function parseFirstEmail(raw: string): string | null {
+    const cleaned = sanitizeImportText(raw).trim();
+    if (!cleaned) return null;
+    if (isLikelyEmail(cleaned)) return cleaned;
+    for (const part of cleaned.split(/[;,]/)) {
+        const email = part.trim();
+        if (isLikelyEmail(email)) return email;
+    }
+    return null;
 }
 
 export function normalizeAreaText(raw: string): string | null {
-    const parts = splitList(raw)
+    const cleaned = sanitizeImportText(raw)
+        .replace(/\bSuburbs:\s*/gi, "")
+        .replace(/[\r\n]+/g, ";")
+        .replace(/,/g, ";");
+
+    const parts = splitList(cleaned)
         .map((part) => normalizeAreaToken(part))
-        .filter(Boolean);
+        .filter((part) => {
+            if (!part) return false;
+            // обрубок штата после сплита «City, FL»
+            return !normalizeState(part) || part.length > 2;
+        });
     if (parts.length === 0) return null;
     return unique(parts).join(", ");
 }
 
 export function normalizeAreaToken(raw: string): string {
-    let value = raw
+    let value = sanitizeImportText(raw)
+        .replace(/[\r\n]+/g, " ")
         .replace(/^serving\s+/i, "")
         .replace(/\s+area$/i, "")
         .replace(/\s+/g, " ")
@@ -654,13 +697,20 @@ export function parseHours(raw: string): ParsedHours | null {
         mode = "by_appointment";
     }
 
-    return { mode, note, slots };
+    const structured = slots.every((slot) => {
+        if (slot.isClosed) return true;
+        if (slot.openTime && slot.closeTime) return true;
+        return mode === "by_appointment";
+    });
+
+    return { mode, note: structured ? null : note, slots };
 }
 
 export type SocialLink = { type: CompanyLinkType; url: string };
 
 export function collectLinks(input: {
     website: string;
+    googleMaps?: string;
     yelp: string;
     facebook: string;
     instagram: string;
@@ -668,22 +718,25 @@ export function collectLinks(input: {
     twitter: string;
     linkedin: string;
 }): SocialLink[] {
-    const pairs: Array<[CompanyLinkType, string]> = [
-        ["website", input.website],
-        ["yelp", input.yelp],
-        ["facebook", input.facebook],
-        ["instagram", input.instagram],
-        ["youtube", input.youtube],
-        ["twitter", input.twitter],
-        ["linkedin", input.linkedin],
-    ];
     const out: SocialLink[] = [];
     const used = new Set<CompanyLinkType>();
-    for (const [type, raw] of pairs) {
-        const url = cleanUrl(raw);
-        if (!url || used.has(type)) continue;
+
+    const push = (type: CompanyLinkType, raw: string | undefined, maps = false) => {
+        if (!raw || used.has(type)) return;
+        const url = maps ? cleanMapsUrl(raw) : cleanUrl(raw);
+        if (!url) return;
         used.add(type);
         out.push({ type, url });
-    }
+    };
+
+    push("website", input.website);
+    push("google_maps", input.googleMaps, true);
+    push("yelp", input.yelp);
+    push("facebook", input.facebook);
+    push("instagram", input.instagram);
+    push("youtube", input.youtube);
+    push("twitter", input.twitter);
+    push("linkedin", input.linkedin);
+
     return out;
 }

@@ -7,7 +7,7 @@ import {
     getCompaniesByCategoryId,
 } from "@/lib/categories"
 import { parseCatalogPath, buildCatalogPath } from "@/lib/catalog-path"
-import { getPublicCityBySlug } from "@/lib/geo"
+import { formatServiceCityLabel, getPublicCityBySlug } from "@/lib/geo"
 import { SSG_CITY_SLUGS } from "@/config/cities"
 import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
 import { CompanyGrid } from "@/components/site/catalog/company-grid"
@@ -128,7 +128,7 @@ export default async function CatalogPage({ params }: PageProps) {
 
     const { companies, total, totalPages } = await getCompaniesByCategoryId({
         categoryId: category?.id ?? null,
-        zips: city?.zips,
+        sCity: city ? formatServiceCityLabel(city.city, city.stateId) : null,
         sort,
         limit,
         page,

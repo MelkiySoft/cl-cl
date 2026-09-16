@@ -1,10 +1,13 @@
 import { cache } from "react"
-import { and, eq, inArray, sql } from "drizzle-orm"
+import { and, eq, inArray, or, sql } from "drizzle-orm"
 
 import { db } from "@/db"
 import { geoUsa } from "@/db/schema"
 import {
+    getPublicCityByCityState,
+    getPublicCityMeta,
     isPublicCitySlug,
+    PUBLIC_CITIES,
     PUBLIC_CITY_SLUGS,
     SSG_CITY_SLUGS,
     type PublicCitySlug,
@@ -61,6 +64,8 @@ function likeContains(value: string): string {
 export const getPublicCityBySlug = cache(
     async (slug: string): Promise<PublicCity | null> => {
         if (!isPublicCitySlug(slug)) return null
+        const meta = getPublicCityMeta(slug)
+        if (!meta) return null
 
         const rows = await db
             .select({
@@ -70,7 +75,13 @@ export const getPublicCityBySlug = cache(
                 zip: geoUsa.zip,
             })
             .from(geoUsa)
-            .where(and(eq(geoUsa.slug, slug), eq(geoUsa.isActive, true)))
+            .where(
+                and(
+                    sql`lower(${geoUsa.city}) = ${meta.city.toLowerCase()}`,
+                    eq(geoUsa.stateId, meta.stateId),
+                    eq(geoUsa.isActive, true)
+                )
+            )
 
         if (rows.length === 0) return null
 
@@ -85,9 +96,9 @@ export const getPublicCityBySlug = cache(
         const first = rows[0]
 
         return {
-            slug,
-            city: first.city ?? slug,
-            stateId: first.stateId ?? "",
+            slug: meta.slug,
+            city: first.city ?? meta.city,
+            stateId: first.stateId ?? meta.stateId,
             stateName: first.stateName,
             zips,
         }
@@ -107,19 +118,42 @@ export const getPublicCityByZip = cache(
         if (!normalized) return null
 
         const row = await db
-            .select({ slug: geoUsa.slug })
+            .select({
+                city: geoUsa.city,
+                stateId: geoUsa.stateId,
+            })
             .from(geoUsa)
             .where(and(eq(geoUsa.zip, normalized), eq(geoUsa.isActive, true)))
             .limit(1)
 
-        const slug = row[0]?.slug
-        if (!slug) return null
+        if (!row[0]?.city || !row[0].stateId) return null
+        const meta = getPublicCityByCityState(row[0].city, row[0].stateId)
+        if (!meta) return null
 
-        return getPublicCityBySlug(slug)
+        return getPublicCityBySlug(meta.slug)
     }
 )
 
-const publicCityFilter = inArray(geoUsa.slug, [...PUBLIC_CITY_SLUGS])
+const publicCityFilter = or(
+    ...PUBLIC_CITIES.map((city) =>
+        and(
+            sql`lower(${geoUsa.city}) = ${city.city.toLowerCase()}`,
+            eq(geoUsa.stateId, city.stateId)
+        )
+    )
+)
+
+export const getPublicCityByServiceCity = cache(
+    async (sCity: string | null | undefined): Promise<PublicCity | null> => {
+        const parsed = parseServiceCityLabel(sCity)
+        if (!parsed) return null
+
+        const meta = getPublicCityByCityState(parsed.city, parsed.stateId)
+        if (!meta) return null
+
+        return getPublicCityBySlug(meta.slug)
+    }
+)
 
 export async function searchGeoCities(
     query: string,

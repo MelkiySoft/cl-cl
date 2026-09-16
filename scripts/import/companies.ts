@@ -4,9 +4,10 @@
  *   pnpm db:import:companies
  *   pnpm db:import:companies -- --dry-run
  *   pnpm db:import:companies -- --limit=20
+ *   pnpm db:import:companies -- --delete-local-images
  *
  * Картинки: data/import/companies/images/
- * После успешной загрузки локальный файл удаляется.
+ * В R2 заливаются всегда. Локальный файл удаляется только с --delete-local-images.
  * Если у уже существующей (не claimed) компании есть хотя бы один
  * локальный файл — старый набор в R2 и БД удаляется целиком, пишется новый.
  */
@@ -40,7 +41,7 @@ import {
     collectLinks,
     compactKey,
     formatServiceCity,
-    isLikelyEmail,
+    parseFirstEmail,
     isValidZip,
     mapBooleanYes,
     mapBooleanYesNo,
@@ -98,6 +99,7 @@ type AttrCatalog = {
 
 const argv = new Set(process.argv.slice(2));
 const DRY_RUN = argv.has("--dry-run");
+const DELETE_LOCAL_IMAGES = argv.has("--delete-local-images");
 const LIMIT = Number(
     process.argv.find((arg) => arg.startsWith("--limit="))?.slice(8) ?? ""
 );
@@ -321,11 +323,13 @@ async function replaceImages(opts: {
         }
     }
 
-    for (const item of uploaded) {
-        try {
-            unlinkSync(item.source);
-        } catch (err) {
-            warn(`failed to delete local image ${item.source}: ${String(err)}`);
+    if (DELETE_LOCAL_IMAGES) {
+        for (const item of uploaded) {
+            try {
+                unlinkSync(item.source);
+            } catch (err) {
+                warn(`failed to delete local image ${item.source}: ${String(err)}`);
+            }
         }
     }
 
@@ -452,6 +456,9 @@ function buildCompany(
     const areaZips: string[] = [];
 
     for (const token of areaTokens) {
+        // редкие склейки через перевод строки — не матчим и не пишем в unmatched
+        if (/[\r\n]/.test(token)) continue;
+
         const tokenKeys = areaTokenKeys(token);
         if (tokenKeys.length === 0 || !mainState) {
             if (normalizeAreaToken(token)) unmatchedAreas.push(token);
@@ -566,8 +573,10 @@ function buildCompany(
     pushBool("Franchise affiliation", franchise);
     pushBool("Service guarantee", guarantee);
 
-    const email = row.email && isLikelyEmail(row.email) ? row.email.trim() : null;
-    if (row.email && !email) warn(`${row.externalId}: skip bad email "${row.email}"`);
+    const email = parseFirstEmail(row.email);
+    if (row.email.trim() && !email) {
+        warn(`${row.externalId}: skip bad email "${row.email}"`);
+    }
 
     const hqZip = isValidZip(row.hqZip) ? row.hqZip.trim() : null;
     if (row.hqZip && !hqZip) warn(`${row.externalId}: skip bad office zip "${row.hqZip}"`);
@@ -625,7 +634,9 @@ function uniqueIds(ids: number[]): number[] {
 }
 
 async function main() {
-    log(`Company import started${DRY_RUN ? " (dry-run)" : ""}`);
+    log(
+        `Company import started${DRY_RUN ? " (dry-run)" : ""}${DELETE_LOCAL_IMAGES ? " (delete-local-images)" : ""}`
+    );
     if (!existsSync(XML_PATH)) {
         throw new Error(`XML not found: ${XML_PATH}`);
     }

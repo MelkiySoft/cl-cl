@@ -17,14 +17,14 @@ export function CompanyCard({ company, priority = false }: CompanyCardProps) {
         <AppLink href={`/company/${company.slug}`} className="group block h-full">
             <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
                 {/* Image */}
-                <div className="relative aspect-[16/10] bg-muted overflow-hidden">
+                <div className="relative aspect-[16/9] bg-muted overflow-hidden">
                     {company.image ? (
                         <Image
                             src={company.image}
                             alt={company.name}
                             fill
                             priority={priority}
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="object-contain p-3"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                     ) : (

@@ -32,7 +32,7 @@ import {
 import { db } from "@/db"
 import { companies } from "@/db/schema"
 import { buildCatalogPath } from "@/lib/catalog-path"
-import { getCoordsByServiceCity, getCoordsByZips, getPublicCityByZip } from "@/lib/geo"
+import { getCoordsByServiceCity, getCoordsByZips, getPublicCityByServiceCity } from "@/lib/geo"
 
 export const revalidate = 3600 // 1 час
 
@@ -82,7 +82,7 @@ export default async function CompanyPage({ params }: PageProps) {
 
     const title = company.metaH1 || company.name
     const location = company.sCity ?? ""
-    const city = await getPublicCityByZip(company.sZips[0] ?? null)
+    const city = await getPublicCityByServiceCity(company.sCity)
     const citySlug = city?.slug ?? null
     const cityLabel = city ? `${city.city}, ${city.stateId}` : null
     const zipZones = await getCoordsByZips(company.sZips)

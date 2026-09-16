@@ -8,7 +8,7 @@ import {
     type CompanySort,
 } from "@/lib/categories"
 import { parseCatalogPath, buildCatalogPath } from "@/lib/catalog-path"
-import { getPublicCityBySlug } from "@/lib/geo"
+import { formatServiceCityLabel, getPublicCityBySlug } from "@/lib/geo"
 import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
 import { CompanyGrid } from "@/components/site/catalog/company-grid"
 import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
@@ -100,7 +100,7 @@ export default async function CatalogFilterPage({
 
     const { companies, total, totalPages } = await getCompaniesByCategoryId({
         categoryId: category?.id ?? null,
-        zips: city?.zips,
+        sCity: city ? formatServiceCityLabel(city.city, city.stateId) : null,
         sort,
         limit,
         page,

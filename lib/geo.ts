@@ -191,11 +191,15 @@ export async function searchGeoZips(opts: {
     city?: string
     stateId?: string
     limit?: number
+    publicOnly?: boolean
 }): Promise<GeoZipSuggestion[]> {
     const limit = opts.limit ?? 20
     const zipPrefix = opts.query?.replace(/\D/g, "") ?? ""
 
-    const filters = [eq(geoUsa.isActive, true), publicCityFilter]
+    const filters = [eq(geoUsa.isActive, true)]
+    if (opts.publicOnly !== false && publicCityFilter) {
+        filters.push(publicCityFilter)
+    }
 
     if (opts.city) filters.push(eq(geoUsa.city, opts.city))
     if (opts.stateId) filters.push(eq(geoUsa.stateId, opts.stateId))
@@ -252,6 +256,44 @@ export async function getGeoCityByExactLabel(label: string) {
         stateId: row.stateId,
         label: formatServiceCityLabel(row.city, row.stateId),
     }
+}
+
+export type GeoZipRecord = {
+    zip: string
+    city: string | null
+    stateId: string | null
+}
+
+/** Любой активный ZIP из geo_usa, без ограничения PUBLIC_CITIES */
+export async function getGeoZips(zips: string[]): Promise<Map<string, GeoZipRecord>> {
+    const normalized = [
+        ...new Set(
+            zips
+                .map((zip) => normalizeZip(zip))
+                .filter((zip): zip is string => Boolean(zip))
+        ),
+    ]
+    if (normalized.length === 0) return new Map()
+
+    const rows = await db
+        .select({
+            zip: geoUsa.zip,
+            city: geoUsa.city,
+            stateId: geoUsa.stateId,
+        })
+        .from(geoUsa)
+        .where(and(inArray(geoUsa.zip, normalized), eq(geoUsa.isActive, true)))
+
+    const map = new Map<string, GeoZipRecord>()
+    for (const row of rows) {
+        if (!row.zip || map.has(row.zip)) continue
+        map.set(row.zip, {
+            zip: row.zip,
+            city: row.city,
+            stateId: row.stateId,
+        })
+    }
+    return map
 }
 
 export async function getCoordsByServiceCity(sCity: string): Promise<{

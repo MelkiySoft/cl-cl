@@ -173,6 +173,7 @@ export default async function AdminCompanyPage({ params }: Props) {
                 links={links}
                 attributeDefinitions={attributeState.definitions}
                 attributeValues={attributeState.values}
+                categoriesMode="admin"
             />
         </div>
     );

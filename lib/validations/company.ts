@@ -118,6 +118,8 @@ export const companyFormSchema = z
         mainCategoryId: z.number().nullable(),
         extraCategoryId1: z.number().nullable(),
         extraCategoryId2: z.number().nullable(),
+        // admin: полный список листьев; у провайдера поле не отправляем
+        categoryIds: z.array(z.number().int().positive()).optional(),
         yearFounded: optionalInt(
             1800,
             CURRENT_YEAR,

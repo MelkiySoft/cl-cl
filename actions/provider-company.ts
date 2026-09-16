@@ -8,7 +8,6 @@ import { db } from "@/db";
 import {
     companies,
     companyImages,
-    companyToCategory,
     companyDocuments,
     companyHours,
     companyLinks,
@@ -30,7 +29,7 @@ import {
 } from "@/lib/r2";
 import { slugify } from "@/lib/utils";
 import { companyAccessWhere, revalidateCompanyPaths } from "@/lib/company-access";
-import { formatServiceCityLabel, getGeoCityByExactLabel, getPublicCityByZip, normalizeZip } from "@/lib/geo";
+import { getGeoCityByExactLabel, getGeoZips, getPublicCityByZip, normalizeZip } from "@/lib/geo";
 
 import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
 import type { CompanyLinkType, DocumentType } from "@/db/schema";
@@ -196,13 +195,16 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
         return { error: "Add at least one service ZIP" };
     }
 
+    const zipRows = await getGeoZips(serviceZips);
     for (const zip of serviceZips) {
-        const zipCity = await getPublicCityByZip(zip);
-        if (
-            !zipCity ||
-            formatServiceCityLabel(zipCity.city, zipCity.stateId) !== serviceCity.label
-        ) {
-            return { error: `ZIP ${zip} is not in ${serviceCity.label}` };
+        const zipRow = zipRows.get(zip);
+        if (zipRow?.stateId && zipRow.stateId !== serviceCity.stateId) {
+            const place = zipRow.city
+                ? `${zipRow.city} ${zipRow.stateId}`
+                : zipRow.stateId;
+            return {
+                error: `ZIP ${zip} is in ${place}, expected ${serviceCity.stateId}`,
+            };
         }
     }
 
@@ -245,41 +247,47 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
             .where(companyAccessWhere(id, session));
 
         // --- Categories ---
-        const leafIds = [
-            data.mainCategoryId,
-            data.extraCategoryId1,
-            data.extraCategoryId2,
-        ].filter((id): id is number => typeof id === "number" && id > 0);
+        const isAdmin = session.user.role === "admin";
+        const requestedLeafIds =
+            isAdmin && data.categoryIds
+                ? data.categoryIds
+                : [
+                    data.mainCategoryId,
+                    data.extraCategoryId1,
+                    data.extraCategoryId2,
+                ];
 
-        const uniqueLeafIds = [...new Set(leafIds)];
+        const uniqueLeafIds = [
+            ...new Set(
+                requestedLeafIds.filter(
+                    (leafId): leafId is number =>
+                        typeof leafId === "number" && leafId > 0
+                )
+            ),
+        ];
 
-        if (uniqueLeafIds.length > 3) {
-            return { error: "Maximum 3 categories" };
-        }
-
-        const { getLeafOptions } = await import("@/lib/provider-categories");
-        const allLeaves = await getLeafOptions();
-        const leafMap = new Map(allLeaves.map((l) => [l.id, l]));
-
-        for (const lid of uniqueLeafIds) {
-            if (!leafMap.has(lid)) {
-                return { error: "Invalid category selected" };
+        if (!isAdmin) {
+            if (uniqueLeafIds.length > 3) {
+                return { error: "Maximum 3 categories" };
             }
-        }
 
-        if (uniqueLeafIds.length > 0) {
-            const roots = new Set(
-                uniqueLeafIds.map((id) => leafMap.get(id)!.rootId)
-            );
-            if (roots.size > 1) {
-                return { error: "Categories must be from the same branch" };
+            const { getLeafOptions } = await import("@/lib/provider-categories");
+            const allLeaves = await getLeafOptions();
+            const leafMap = new Map(allLeaves.map((leaf) => [leaf.id, leaf]));
+
+            for (const leafId of uniqueLeafIds) {
+                if (!leafMap.has(leafId)) {
+                    return { error: "Invalid category selected" };
+                }
             }
-        }
 
-        const toLink = new Set<number>();
-        for (const lid of uniqueLeafIds) {
-            for (const pid of leafMap.get(lid)!.pathIds) {
-                toLink.add(pid);
+            if (uniqueLeafIds.length > 0) {
+                const roots = new Set(
+                    uniqueLeafIds.map((leafId) => leafMap.get(leafId)!.rootId)
+                );
+                if (roots.size > 1) {
+                    return { error: "Categories must be from the same branch" };
+                }
             }
         }
 
@@ -290,23 +298,16 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
             return { error: attributesResult.error };
         }
 
-        await db
-            .delete(companyToCategory)
-            .where(eq(companyToCategory.companyId, id));
-
-        if (toLink.size > 0) {
-            const mainLeaf =
-                data.mainCategoryId && leafMap.has(data.mainCategoryId)
-                    ? data.mainCategoryId
-                    : uniqueLeafIds[0];
-
-            await db.insert(companyToCategory).values(
-                [...toLink].map((categoryId) => ({
-                    companyId: id,
-                    categoryId,
-                    isMain: categoryId === mainLeaf,
-                }))
+        const { replaceCompanyCategories } = await import(
+            "@/lib/provider-categories"
             );
+        const categoriesResult = await replaceCompanyCategories({
+            companyId: id,
+            leafIds: uniqueLeafIds,
+            mainLeafId: data.mainCategoryId,
+        });
+        if (categoriesResult.error) {
+            return { error: categoriesResult.error };
         }
 
         revalidateCompanyPaths({ companyId: id, slug: existing.slug });

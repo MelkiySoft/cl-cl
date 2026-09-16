@@ -19,6 +19,7 @@ import { updateCompany } from "@/actions/provider-company";
 import { createUploadUrl } from "@/actions/upload";
 import { CompanyGallery } from "@/components/dashboard/provider/company-gallery";
 import { CompanyCategoriesFields } from "@/components/dashboard/provider/company-categories-fields";
+import { CompanyAdminCategoriesFields } from "@/components/dashboard/admin/company-admin-categories-fields";
 import { CompanyDocuments } from "@/components/dashboard/provider/company-documents";
 import { CompanyHoursFields } from "@/components/dashboard/provider/company-hours-fields";
 import { CompanyLinksFields } from "@/components/dashboard/provider/company-links-fields";
@@ -98,6 +99,7 @@ type Props = {
     links: CompanyLinkItem[];
     attributeDefinitions: AttributeDefinition[];
     attributeValues: CompanyAttributeInput[];
+    categoriesMode?: "provider" | "admin";
 };
 
 export function EditCompanyForm({
@@ -110,7 +112,13 @@ export function EditCompanyForm({
                                     links,
                                     attributeDefinitions,
                                     attributeValues,
+                                    categoriesMode = "provider",
                                 }: Props) {
+    const isAdminCategories = categoriesMode === "admin";
+    const selectedCategoryIds = [
+        categorySelection.mainId,
+        ...categorySelection.extraIds,
+    ].filter((id): id is number => typeof id === "number" && id > 0);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [serverError, setServerError] = useState<string | null>(null);
@@ -141,6 +149,7 @@ export function EditCompanyForm({
             mainCategoryId: categorySelection.mainId,
             extraCategoryId1: categorySelection.extraIds[0] ?? null,
             extraCategoryId2: categorySelection.extraIds[1] ?? null,
+            categoryIds: isAdminCategories ? selectedCategoryIds : undefined,
             hqAddressLine1: company.hqAddressLine1 ?? "",
             hqCity: company.hqCity ?? "",
             hqState: company.hqState ?? "",
@@ -543,26 +552,49 @@ export function EditCompanyForm({
                 <CardHeader>
                     <CardTitle>Categories</CardTitle>
                     <CardDescription>
-                        Choose up to 3 categories from the same branch
+                        {isAdminCategories
+                            ? "Select any number of categories, including different branches"
+                            : "Choose up to 3 categories from the same branch"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <CompanyCategoriesFields
-                        leaves={leaves}
-                        mainCategoryId={watch("mainCategoryId")}
-                        extraCategoryId1={watch("extraCategoryId1")}
-                        extraCategoryId2={watch("extraCategoryId2")}
-                        onMainChange={(id) =>
-                            setValue("mainCategoryId", id, { shouldDirty: true })
-                        }
-                        onExtra1Change={(id) =>
-                            setValue("extraCategoryId1", id, { shouldDirty: true })
-                        }
-                        onExtra2Change={(id) =>
-                            setValue("extraCategoryId2", id, { shouldDirty: true })
-                        }
-                        disabled={isPending}
-                    />
+                    {isAdminCategories ? (
+                        <CompanyAdminCategoriesFields
+                            leaves={leaves}
+                            selectedIds={watch("categoryIds") ?? selectedCategoryIds}
+                            mainCategoryId={watch("mainCategoryId")}
+                            onChange={(ids, mainId) => {
+                                setValue("categoryIds", ids, { shouldDirty: true });
+                                setValue("mainCategoryId", mainId, {
+                                    shouldDirty: true,
+                                });
+                                setValue("extraCategoryId1", ids[1] ?? null, {
+                                    shouldDirty: true,
+                                });
+                                setValue("extraCategoryId2", ids[2] ?? null, {
+                                    shouldDirty: true,
+                                });
+                            }}
+                            disabled={isPending}
+                        />
+                    ) : (
+                        <CompanyCategoriesFields
+                            leaves={leaves}
+                            mainCategoryId={watch("mainCategoryId")}
+                            extraCategoryId1={watch("extraCategoryId1")}
+                            extraCategoryId2={watch("extraCategoryId2")}
+                            onMainChange={(id) =>
+                                setValue("mainCategoryId", id, { shouldDirty: true })
+                            }
+                            onExtra1Change={(id) =>
+                                setValue("extraCategoryId1", id, { shouldDirty: true })
+                            }
+                            onExtra2Change={(id) =>
+                                setValue("extraCategoryId2", id, { shouldDirty: true })
+                            }
+                            disabled={isPending}
+                        />
+                    )}
                 </CardContent>
             </Card>
 

@@ -132,8 +132,59 @@ export async function getCompanyLeafSelection(companyId: number): Promise<{
 
     const extraIds = leafLinks
         .filter((l) => l.categoryId !== mainId)
-        .map((l) => l.categoryId)
-        .slice(0, 2);
+        .map((l) => l.categoryId);
 
     return { mainId, extraIds };
+}
+
+/** Записывает выбранные листья + всех предков в company_to_category */
+export async function replaceCompanyCategories(input: {
+    companyId: number;
+    leafIds: number[];
+    mainLeafId: number | null;
+}): Promise<{ error?: string }> {
+    const uniqueLeafIds = [
+        ...new Set(
+            input.leafIds.filter(
+                (id): id is number => typeof id === "number" && id > 0
+            )
+        ),
+    ];
+
+    const allLeaves = await getLeafOptions();
+    const leafMap = new Map(allLeaves.map((leaf) => [leaf.id, leaf]));
+
+    for (const leafId of uniqueLeafIds) {
+        if (!leafMap.has(leafId)) {
+            return { error: "Invalid category selected" };
+        }
+    }
+
+    const toLink = new Set<number>();
+    for (const leafId of uniqueLeafIds) {
+        for (const pathId of leafMap.get(leafId)!.pathIds) {
+            toLink.add(pathId);
+        }
+    }
+
+    await db
+        .delete(companyToCategory)
+        .where(eq(companyToCategory.companyId, input.companyId));
+
+    if (toLink.size === 0) return {};
+
+    const mainLeaf =
+        input.mainLeafId && leafMap.has(input.mainLeafId)
+            ? input.mainLeafId
+            : uniqueLeafIds[0];
+
+    await db.insert(companyToCategory).values(
+        [...toLink].map((categoryId) => ({
+            companyId: input.companyId,
+            categoryId,
+            isMain: categoryId === mainLeaf,
+        }))
+    );
+
+    return {};
 }

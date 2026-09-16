@@ -73,7 +73,7 @@ export function CategorySidebar({
                                     citySlug,
                                 }: CategorySidebarProps) {
     return (
-        <aside className="w-full lg:w-56 shrink-0">
+        <aside className="hidden w-56 shrink-0 lg:block">
             <div className="sticky top-20 space-y-1">
                 <p className="px-2.5 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Categories

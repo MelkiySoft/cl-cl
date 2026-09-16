@@ -7,10 +7,14 @@ export async function GET(request: NextRequest) {
     const sCity = request.nextUrl.searchParams.get("sCity") ?? ""
     const parsed = parseServiceCityLabel(sCity)
 
+    const zipPrefix = q.replace(/\D/g, "")
+    const searchStatewide = zipPrefix.length >= 2
+
     const zips = await searchGeoZips({
         query: q,
-        city: parsed?.city,
+        city: searchStatewide ? undefined : parsed?.city,
         stateId: parsed?.stateId,
+        publicOnly: !searchStatewide,
     })
 
     return NextResponse.json({ zips })

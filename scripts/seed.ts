@@ -16,7 +16,7 @@ async function main() {
     await seedUsers();
     await seedCategories();
     await seedAttributes();
-    await seedCompanies();
+    //await seedCompanies();
 
     await seedBlogCategories();
     await seedArticles();

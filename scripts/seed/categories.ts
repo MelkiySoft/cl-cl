@@ -121,11 +121,19 @@ const SEED_CATEGORIES: SeedCategory[] = [
         ],
     },
     {
+        name: "Post Construction Cleaning",
+        slug: "post-construction-cleaning",
+        top: true,
+        column: 1,
+        sortOrder: 3,
+        noindex: true,
+    },
+    {
         name: "Maid Service",
         slug: "maid-service",
         top: true,
         column: 1,
-        sortOrder: 3,
+        sortOrder: 4,
         noindex: true,
     },
     {
@@ -133,7 +141,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "upholstery-cleaning",
         top: true,
         column: 1,
-        sortOrder: 4,
+        sortOrder: 5,
         noindex: true,
     },
     {
@@ -141,7 +149,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "air-duct-cleaning",
         top: true,
         column: 1,
-        sortOrder: 5,
+        sortOrder: 6,
         noindex: true,
     },
     {
@@ -149,7 +157,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "mold-remediation",
         top: true,
         column: 1,
-        sortOrder: 6,
+        sortOrder: 7,
         noindex: false,
     },
     {
@@ -157,7 +165,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "pest-control",
         top: true,
         column: 1,
-        sortOrder: 7,
+        sortOrder: 8,
         noindex: true,
     },
     {
@@ -165,7 +173,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "pool-cleaning",
         top: true,
         column: 1,
-        sortOrder: 8,
+        sortOrder: 9,
         noindex: true,
     },
     {
@@ -173,7 +181,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "cleaning-outside",
         top: true,
         column: 1,
-        sortOrder: 9,
+        sortOrder: 10,
         noindex: true,
         children: [
             {
@@ -201,7 +209,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "vehicle-equipment-cleaning",
         top: true,
         column: 1,
-        sortOrder: 10,
+        sortOrder: 11,
         noindex: true,
     },
     {
@@ -209,7 +217,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "junk-removal",
         top: true,
         column: 1,
-        sortOrder: 11,
+        sortOrder: 12,
         noindex: true,
     },
     {
@@ -217,7 +225,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "sewer-cleaning",
         top: true,
         column: 1,
-        sortOrder: 12,
+        sortOrder: 13,
         noindex: true,
     },
     {
@@ -225,7 +233,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "laundry",
         top: true,
         column: 1,
-        sortOrder: 13,
+        sortOrder: 14,
         noindex: true,
     },
     {
@@ -233,7 +241,7 @@ const SEED_CATEGORIES: SeedCategory[] = [
         slug: "dry-cleaning",
         top: true,
         column: 1,
-        sortOrder: 14,
+        sortOrder: 15,
         noindex: true,
     },
 ];

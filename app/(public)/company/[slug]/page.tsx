@@ -34,7 +34,7 @@ import { companies } from "@/db/schema"
 import { buildCatalogPath } from "@/lib/catalog-path"
 import { getCoordsByServiceCity, getCoordsByZips, getPublicCityByServiceCity } from "@/lib/geo"
 
-export const revalidate = 3600 // 1 час
+export const revalidate = 60 // TTL 3600 - 1 час
 
 type PageProps = {
     params: Promise<{ slug: string }>

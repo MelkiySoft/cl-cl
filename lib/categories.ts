@@ -62,7 +62,7 @@ export const getMenuCategories = unstable_cache(
     },
     ["menu-categories"],
     {
-        revalidate: 3600, // 1 час
+        revalidate: 60, // TTL 3600 - 1 час
         tags: ["categories"],
     }
 )

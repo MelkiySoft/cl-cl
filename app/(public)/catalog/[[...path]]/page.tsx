@@ -15,7 +15,7 @@ import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
 import { CatalogPagination } from "@/components/site/catalog/catalog-pagination"
 import { Suspense } from "react"
 
-export const revalidate = 3600
+export const revalidate = 60 // TTL 3600 - 1 час
 
 type PageProps = {
     params: Promise<{ path?: string[] }>

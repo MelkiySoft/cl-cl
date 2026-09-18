@@ -21,6 +21,8 @@ const IGNORE = [
     '.env.local',
     '.env.development',
     '.env.production',
+    'images',
+    'images_tmp',
     // 'pnpm-lock.yaml',
     // 'package-lock.json',
 ];

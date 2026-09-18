@@ -1,4 +1,5 @@
 import { isPublicCitySlug } from "@/config/cities"
+import type { CompanySort } from "@/lib/categories"
 
 export function parseCatalogPath(path: string[] | undefined): {
     citySlug: string | null
@@ -37,4 +38,49 @@ export function buildCatalogPath(opts: {
     if (opts.citySlug) parts.push(opts.citySlug)
     if (opts.categorySlugs?.length) parts.push(...opts.categorySlugs)
     return parts.length ? `/catalog/${parts.join("/")}` : "/catalog"
+}
+
+const CATALOG_SORTS: CompanySort[] = [
+    "sort_order",
+    "name_asc",
+    "name_desc",
+    "newest",
+    "viewed",
+]
+
+const CATALOG_LIMITS = [15, 30, 60, 120] as const
+
+function firstQueryValue(
+    value: string | string[] | undefined
+): string | undefined {
+    if (Array.isArray(value)) return value[0]
+    return value
+}
+
+export type CatalogSearchParams = {
+    sort?: string | string[]
+    limit?: string | string[]
+    page?: string | string[]
+}
+
+export function parseCatalogSearchParams(sp: CatalogSearchParams): {
+    sort: CompanySort
+    limit: number
+    page: number
+} {
+    const sortRaw = firstQueryValue(sp.sort)
+    const sort = CATALOG_SORTS.includes(sortRaw as CompanySort)
+        ? (sortRaw as CompanySort)
+        : "sort_order"
+
+    const limitRaw = Number(firstQueryValue(sp.limit))
+    const limit = (CATALOG_LIMITS as readonly number[]).includes(limitRaw)
+        ? limitRaw
+        : 15
+
+    const pageRaw = Number(firstQueryValue(sp.page))
+    const page =
+        Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1
+
+    return { sort, limit, page }
 }

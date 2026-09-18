@@ -8,10 +8,17 @@ const nextConfig: NextConfig = {
             ? [
                 {
                     protocol: "https",
-                    hostname: new URL(r2PublicUrl).hostname, // ← только домен
+                    hostname: new URL(r2PublicUrl).hostname,
                 },
             ]
             : [],
+    },
+    // Меньше параллельных пререндеров = меньше одновременных запросов к БД.
+    // Retry ловит транзиентные ECONNRESET на Windows / Neon.
+    experimental: {
+        staticGenerationRetryCount: 3,
+        staticGenerationMaxConcurrency: 2,
+        staticGenerationMinPagesPerWorker: 50,
     },
 };
 

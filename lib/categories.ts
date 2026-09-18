@@ -108,36 +108,43 @@ export type CategoryWithPath = {
 // Дерево категорий для сайдбара
 // ============================================================
 
-export const getCategoryTree = cache(async (): Promise<CategoryNode[]> => {
-    const all = await db.query.categories.findMany({
-        where: eq(categories.status, true),
-        orderBy: [asc(categories.sortOrder)],
-        columns: {
-            id: true,
-            name: true,
-            slug: true,
-            parentId: true,
-        },
-    })
+export const getCategoryTree = unstable_cache(
+    async (): Promise<CategoryNode[]> => {
+        const all = await db.query.categories.findMany({
+            where: eq(categories.status, true),
+            orderBy: [asc(categories.sortOrder)],
+            columns: {
+                id: true,
+                name: true,
+                slug: true,
+                parentId: true,
+            },
+        })
 
-    const map = new Map<number, CategoryNode>()
-    const roots: CategoryNode[] = []
+        const map = new Map<number, CategoryNode>()
+        const roots: CategoryNode[] = []
 
-    for (const c of all) {
-        map.set(c.id, { ...c, children: [] })
-    }
-
-    for (const c of all) {
-        const node = map.get(c.id)!
-        if (c.parentId && map.has(c.parentId)) {
-            map.get(c.parentId)!.children.push(node)
-        } else {
-            roots.push(node)
+        for (const c of all) {
+            map.set(c.id, { ...c, children: [] })
         }
-    }
 
-    return roots
-})
+        for (const c of all) {
+            const node = map.get(c.id)!
+            if (c.parentId && map.has(c.parentId)) {
+                map.get(c.parentId)!.children.push(node)
+            } else {
+                roots.push(node)
+            }
+        }
+
+        return roots
+    },
+    ["category-tree"],
+    {
+        revalidate: 60,
+        tags: ["categories"],
+    }
+)
 
 // ============================================================
 // Найти категорию по пути slug'ов
@@ -289,7 +296,7 @@ export const getCompaniesByCategoryId = cache(
                     select 1
                     from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
                     where svc.zip in (${zipList})
-                )`
+                    )`
                 : undefined
 
         const cityFilter = cityLabel

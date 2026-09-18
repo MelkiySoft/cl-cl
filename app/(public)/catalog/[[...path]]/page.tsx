@@ -4,21 +4,26 @@ import { notFound } from "next/navigation"
 import {
     getCategoryByPath,
     getCategoryTree,
-    getCompaniesByCategoryId,
 } from "@/lib/categories"
-import { parseCatalogPath, buildCatalogPath } from "@/lib/catalog-path"
+import {
+    parseCatalogPath,
+    buildCatalogPath,
+    type CatalogSearchParams,
+} from "@/lib/catalog-path"
 import { formatServiceCityLabel, getPublicCityBySlug } from "@/lib/geo"
 import { SSG_CITY_SLUGS } from "@/config/cities"
 import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
-import { CompanyGrid } from "@/components/site/catalog/company-grid"
-import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
-import { CatalogPagination } from "@/components/site/catalog/catalog-pagination"
+import {
+    CatalogListing,
+    CatalogListingFallback,
+} from "@/components/site/catalog/catalog-listing"
 import { Suspense } from "react"
 
 export const revalidate = 60 // TTL 3600 - 1 час
 
 type PageProps = {
     params: Promise<{ path?: string[] }>
+    searchParams: Promise<CatalogSearchParams>
 }
 
 export async function generateStaticParams() {
@@ -107,13 +112,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 }
 
-export default async function CatalogPage({ params }: PageProps) {
+export default async function CatalogPage({ params, searchParams }: PageProps) {
     const { path } = await params
     const { citySlug, categorySlugs } = parseCatalogPath(path)
-
-    const sort = "sort_order"
-    const limit = 15
-    const page = 1
 
     const [tree, city, category] = await Promise.all([
         getCategoryTree(),
@@ -125,14 +126,6 @@ export default async function CatalogPage({ params }: PageProps) {
 
     if (citySlug && !city) notFound()
     if (categorySlugs.length > 0 && !category) notFound()
-
-    const { companies, total, totalPages } = await getCompaniesByCategoryId({
-        categoryId: category?.id ?? null,
-        sCity: city ? formatServiceCityLabel(city.city, city.stateId) : null,
-        sort,
-        limit,
-        page,
-    })
 
     const location = city ? `${city.city}, ${city.stateId}` : null
     const title = city && category
@@ -225,14 +218,12 @@ export default async function CatalogPage({ params }: PageProps) {
                 />
 
                 <div className="flex-1 min-w-0">
-                    <Suspense fallback={null}>
-                        <CatalogToolbar total={total} />
-                    </Suspense>
-
-                    <CompanyGrid companies={companies} />
-
-                    <Suspense fallback={null}>
-                        <CatalogPagination page={page} totalPages={totalPages} />
+                    <Suspense fallback={<CatalogListingFallback />}>
+                        <CatalogListing
+                            searchParams={searchParams}
+                            categoryId={category?.id ?? null}
+                            sCity={city ? formatServiceCityLabel(city.city, city.stateId) : null}
+                        />
                     </Suspense>
                 </div>
             </div>

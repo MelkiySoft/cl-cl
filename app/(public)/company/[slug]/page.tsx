@@ -14,7 +14,6 @@ import {
     Calendar,
     Building2,
 } from "lucide-react"
-import { and, eq } from "drizzle-orm"
 import { CompanyGallery } from "@/components/site/company/company-gallery"
 import { getCompanyBySlug } from "@/lib/companies"
 import { Button } from "@/components/ui/button"
@@ -29,29 +28,21 @@ import {
     getWebsiteUrl,
     sortCompanyLinks,
 } from "@/lib/company-links"
-import { db } from "@/db"
-import { companies } from "@/db/schema"
 import { buildCatalogPath } from "@/lib/catalog-path"
 import { getCoordsByServiceCity, getCoordsByZips, getPublicCityByServiceCity } from "@/lib/geo"
 
-export const revalidate = 60 // TTL 3600 - 1 час
+export const revalidate = 60
+export const dynamicParams = true
 
 type PageProps = {
     params: Promise<{ slug: string }>
 }
 
-/* Кеширование от CDN vercel.  x-vercel-cache: HIT */
-export async function generateStaticParams() {
-    const rows = await db.query.companies.findMany({
-        where: and(
-            eq(companies.status, true),
-            eq(companies.moderationStatus, "approved")
-        ),
-        columns: { slug: true },
-    })
-
-    return rows.map((c) => ({ slug: c.slug }))
-}
+/**
+ * Не пререндерим все карточки на билде.
+ * 4000 компаний × HTML/RSC ≈ 200–300 МБ в deployments-storage на каждый деплой.
+ * Страница собирается по первому запросу и дальше живёт как ISR (revalidate).
+ */
 
 export async function generateMetadata({
                                            params,

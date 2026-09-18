@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-18T06:46:48.424Z
+> Последнее обновление: 2026-09-18T07:07:47.435Z
 
 ```text
 ├── actions/
@@ -202,9 +202,21 @@
 │   │   ├── company1.jpg
 │   │   ├── company2.jpg
 │   │   ├── company3.jpg
+│   │   ├── company4.jpg
+│   │   ├── company5.jpg
+│   │   ├── company6.jpg
+│   │   ├── company7.jpg
+│   │   ├── company8.jpg
+│   │   ├── company9.jpg
 │   │   ├── gallery1.jpg
 │   │   ├── gallery2.jpg
 │   │   ├── gallery3.jpg
+│   │   ├── gallery4.jpg
+│   │   ├── gallery5.jpg
+│   │   ├── gallery6.jpg
+│   │   ├── gallery7.jpg
+│   │   ├── gallery8.jpg
+│   │   ├── gallery9.jpg
 │   │   ├── logo.jpg
 │   │   ├── sparkle-1.jpg
 │   │   ├── sparkle-2.jpg

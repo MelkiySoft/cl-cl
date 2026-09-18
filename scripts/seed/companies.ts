@@ -33,12 +33,24 @@ const IMAGES = [
     "/demo/company1.jpg",
     "/demo/company2.jpg",
     "/demo/company3.jpg",
+    "/demo/company4.jpg",
+    "/demo/company5.jpg",
+    "/demo/company6.jpg",
+    "/demo/company7.jpg",
+    "/demo/company8.jpg",
+    "/demo/company9.jpg",
 ]
 
 const GALLERY_IMAGES = [
     "/demo/gallery1.jpg",
     "/demo/gallery2.jpg",
     "/demo/gallery3.jpg",
+    "/demo/gallery4.jpg",
+    "/demo/gallery5.jpg",
+    "/demo/gallery6.jpg",
+    "/demo/gallery7.jpg",
+    "/demo/gallery8.jpg",
+    "/demo/gallery9.jpg",
 ]
 
 const NAME_PREFIXES = [

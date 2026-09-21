@@ -32,6 +32,7 @@ import {
     companyImages,
     companyLinks,
     companyToCategory,
+    cities,
     geoUsa,
 } from "@/db/schema";
 import { slugify } from "@/lib/utils";
@@ -405,6 +406,7 @@ type BuiltCompany = {
         hqCity: string | null;
         hqState: string | null;
         hqZip: string | null;
+        cityId: number | null;
         sCity: string | null;
         sZips: string[];
         sArea: string | null;
@@ -604,6 +606,7 @@ function buildCompany(
             hqCity,
             hqState,
             hqZip,
+            cityId: null,
             sCity,
             sZips: unique([...explicitZips, ...areaZips]),
             sArea: normalizeAreaText(row.serviceArea),
@@ -657,6 +660,23 @@ async function main() {
     }
     const geo = await loadGeoIndex([...stateIds]);
     log(`Geo rows indexed for states: ${[...stateIds].join(", ") || "—"}`);
+
+    const cityRows = await db
+        .select({
+            id: cities.id,
+            name: cities.name,
+            stateId: cities.stateId,
+        })
+        .from(cities);
+    const cityIdByLabel = new Map(
+        cityRows.map((row) => [
+            `${row.name} ${row.stateId}`.toLowerCase(),
+            row.id,
+        ])
+    );
+    if (cityRows.length === 0) {
+        warn("cities table is empty — city_id will stay null. Run pnpm db:geo:build-cities");
+    }
 
     const existing = await db
         .select({
@@ -746,6 +766,9 @@ async function main() {
         }
 
         const payload = { ...built.values };
+        if (payload.sCity) {
+            payload.cityId = cityIdByLabel.get(payload.sCity.toLowerCase()) ?? null;
+        }
         if (current && row.insuranceStatus.trim() === "") {
             payload.isInsured = current.isInsured;
         }

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { MapPin, X } from "lucide-react"
 
-import { PUBLIC_CITIES } from "@/config/cities"
 import { useSelectedCity } from "@/hooks/use-selected-city"
 import { cn } from "@/lib/utils"
 
@@ -13,8 +12,8 @@ type CityPickerProps = {
 }
 
 export function CityPicker({ className, onPicked }: CityPickerProps) {
-    const { citySlug, setCity, clearCity } = useSelectedCity()
-    const selected = PUBLIC_CITIES.find((c) => c.slug === citySlug) ?? null
+    const { citySlug, setCity, clearCity, publicCities } = useSelectedCity()
+    const selected = publicCities.find((c) => c.slug === citySlug) ?? null
 
     const [query, setQuery] = useState("")
     const [open, setOpen] = useState(false)
@@ -34,13 +33,13 @@ export function CityPicker({ className, onPicked }: CityPickerProps) {
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase()
-        if (!q) return PUBLIC_CITIES
-        return PUBLIC_CITIES.filter(
+        if (!q) return publicCities
+        return publicCities.filter(
             (c) =>
                 c.label.toLowerCase().includes(q) ||
                 c.slug.includes(q)
         )
-    }, [query])
+    }, [query, publicCities])
 
     function pick(slug: string) {
         setCity(slug)
@@ -76,7 +75,7 @@ export function CityPicker({ className, onPicked }: CityPickerProps) {
             return
         }
 
-        const match = PUBLIC_CITIES.find(
+        const match = publicCities.find(
             (c) =>
                 c.label.toLowerCase() === value.toLowerCase() ||
                 c.slug === value.toLowerCase()

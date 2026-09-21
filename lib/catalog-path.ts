@@ -1,7 +1,9 @@
-import { isPublicCitySlug } from "@/config/cities"
 import type { CompanySort } from "@/lib/categories"
 
-export function parseCatalogPath(path: string[] | undefined): {
+export function parseCatalogPath(
+    path: string[] | undefined,
+    publicCitySlugs?: Iterable<string>
+): {
     citySlug: string | null
     categorySlugs: string[]
 } {
@@ -10,14 +12,18 @@ export function parseCatalogPath(path: string[] | undefined): {
         return { citySlug: null, categorySlugs: [] }
     }
 
-    if (isPublicCitySlug(slugs[0])) {
+    const known = publicCitySlugs ? new Set(publicCitySlugs) : null
+    if (known?.has(slugs[0])) {
         return { citySlug: slugs[0], categorySlugs: slugs.slice(1) }
     }
 
     return { citySlug: null, categorySlugs: slugs }
 }
 
-export function parseCatalogPathname(pathname: string): {
+export function parseCatalogPathname(
+    pathname: string,
+    publicCitySlugs?: Iterable<string>
+): {
     citySlug: string | null
     categorySlugs: string[]
 } {
@@ -27,7 +33,7 @@ export function parseCatalogPathname(pathname: string): {
     }
 
     const segs = parts[1] === "filter" ? parts.slice(2) : parts.slice(1)
-    return parseCatalogPath(segs)
+    return parseCatalogPath(segs, publicCitySlugs)
 }
 
 export function buildCatalogPath(opts: {

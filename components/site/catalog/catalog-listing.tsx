@@ -12,18 +12,21 @@ import { CompanyGrid } from "@/components/site/catalog/company-grid"
 type CatalogListingProps = {
     searchParams: Promise<CatalogSearchParams>
     categoryId: number | null
+    cityId?: number | null
     sCity: string | null
 }
 
 export async function CatalogListing({
                                          searchParams,
                                          categoryId,
+                                         cityId,
                                          sCity,
                                      }: CatalogListingProps) {
     const { sort, limit, page } = parseCatalogSearchParams(await searchParams)
 
     const { companies, total, totalPages } = await getCompaniesByCategoryId({
         categoryId,
+        cityId,
         sCity,
         sort,
         limit,

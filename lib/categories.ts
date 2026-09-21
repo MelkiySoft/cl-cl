@@ -10,6 +10,7 @@ import {
     companies,
     companyToCategory,
     companyImages,
+    cityZips,
 } from "@/db/schema"
 
 export type MenuCategoryChild = {
@@ -230,7 +231,8 @@ export type CompanySort =
 
 export type CompaniesQuery = {
     categoryId: number | null
-    /** "Chicago IL" — основной фильтр города каталога */
+    cityId?: number | null
+    /** fallback, пока city_id не проставлен */
     sCity?: string | null
     zips?: string[]
     sort?: CompanySort
@@ -252,6 +254,7 @@ const DEFAULT_SORT: CompanySort = "sort_order"
 export const getCompaniesByCategoryId = cache(
     async ({
                categoryId,
+               cityId,
                sCity,
                zips,
                sort = DEFAULT_SORT,
@@ -281,9 +284,10 @@ export const getCompaniesByCategoryId = cache(
         })()
 
         const cityLabel = sCity?.trim() || null
+        const cityLabelLower = cityLabel?.toLowerCase() ?? null
 
         const zipList =
-            !cityLabel && zips && zips.length > 0
+            !cityId && !cityLabel && zips && zips.length > 0
                 ? sql.join(
                     zips.map((zip) => sql`${zip}`),
                     sql`, `
@@ -299,12 +303,26 @@ export const getCompaniesByCategoryId = cache(
                     )`
                 : undefined
 
-        const cityFilter = cityLabel
-            ? sql`lower(${companies.sCity}) = ${cityLabel.toLowerCase()}`
-            : zipFilter
+        const cityFilter = cityId
+            ? sql`(
+                    ${companies.cityId} = ${cityId}
+                    or (
+                        ${cityLabelLower}::text is not null
+                        and lower(${companies.sCity}) = ${cityLabelLower}
+                    )
+                    or exists (
+                        select 1
+                        from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
+                        inner join ${cityZips} as cz on cz.zip = svc.zip
+                        where cz.city_id = ${cityId}
+                    )
+                )`
+            : cityLabel
+                ? sql`lower(${companies.sCity}) = ${cityLabelLower}`
+                : zipFilter
 
-        // город выбран, но нет ни sCity, ни ZIP — пустая выдача, не весь каталог
-        if (!cityLabel && zips && zips.length === 0) {
+        // город выбран, но нет ни cityId, ни sCity, ни ZIP — пустая выдача
+        if (!cityId && !cityLabel && zips && zips.length === 0) {
             return {
                 companies: [],
                 total: 0,

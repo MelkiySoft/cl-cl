@@ -15,6 +15,7 @@
     "db:reset": "tsx scripts/db-reset.ts",
     "db:geo:load": "tsx scripts/geo/load-geo-usa.ts",
     "db:geo:generate-slugs": "tsx scripts/geo/generate-slugs.ts",
+    "db:geo:build-cities": "tsx scripts/geo/build-cities.ts",
     "db:geo:export-to-xml": "tsx scripts/geo/export-to-xml.ts",
     "db:import:companies": "tsx scripts/import/companies.ts",
     "db:r2:cleanup": "tsx scripts/cleanup-r2-orphans.ts",

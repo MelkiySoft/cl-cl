@@ -6,10 +6,10 @@ import {
     getCategoryTree,
 } from "@/lib/categories"
 import {
-    parseCatalogPath,
     buildCatalogPath,
     type CatalogSearchParams,
 } from "@/lib/catalog-path"
+import { resolveCatalogPath } from "@/lib/catalog-path-server"
 import { formatServiceCityLabel, getPublicCityBySlug } from "@/lib/geo"
 import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
 import {
@@ -27,7 +27,7 @@ export async function generateMetadata({
                                            params,
                                        }: PageProps): Promise<Metadata> {
     const { path } = await params
-    const { citySlug, categorySlugs } = parseCatalogPath(path)
+    const { citySlug, categorySlugs } = await resolveCatalogPath(path)
 
     const [city, category] = await Promise.all([
         citySlug ? getPublicCityBySlug(citySlug) : Promise.resolve(null),
@@ -79,7 +79,7 @@ export default async function CatalogFilterPage({
                                                     searchParams,
                                                 }: PageProps) {
     const { path } = await params
-    const { citySlug, categorySlugs } = parseCatalogPath(path)
+    const { citySlug, categorySlugs } = await resolveCatalogPath(path)
 
     const [tree, city, category] = await Promise.all([
         getCategoryTree(),
@@ -187,6 +187,7 @@ export default async function CatalogFilterPage({
                         <CatalogListing
                             searchParams={searchParams}
                             categoryId={category?.id ?? null}
+                            cityId={city?.id ?? null}
                             sCity={city ? formatServiceCityLabel(city.city, city.stateId) : null}
                         />
                     </Suspense>

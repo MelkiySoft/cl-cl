@@ -10,6 +10,7 @@ import {
     companyAttributes,
     categories,
     categoryPath,
+    cities,
 } from "@/db/schema"
 import {
     ATTRIBUTE_ID,
@@ -109,16 +110,16 @@ const BUSINESS_STRUCTURES = [
 const HOURS_MODES = ["weekly", "always_open", "by_appointment"] as const
 
 const CITIES = [
-    { city: "Austin", state: "TX", zips: ["78701", "78702", "78703", "78704"] },
-    { city: "Dallas", state: "TX", zips: ["75201", "75202", "75204"] },
-    { city: "Houston", state: "TX", zips: ["77001", "77002", "77003", "77007"] },
-    { city: "Los Angeles", state: "CA", zips: ["90001", "90004", "90012", "90015"] },
-    { city: "San Francisco", state: "CA", zips: ["94102", "94103", "94107", "94110"] },
-    { city: "New York", state: "NY", zips: ["10001", "10002", "10003", "10011"] },
-    { city: "Chicago", state: "IL", zips: ["60601", "60602", "60605", "60607"] },
-    { city: "Miami", state: "FL", zips: ["33101", "33125", "33130", "33132"] },
-    { city: "Seattle", state: "WA", zips: ["98101", "98102", "98104", "98109"] },
-    { city: "Denver", state: "CO", zips: ["80201", "80202", "80203", "80205"] },
+    {
+        city: "Orlando",
+        state: "FL",
+        zips: ["32801", "32803", "32804", "32806", "32819", "32822", "32835"],
+    },
+    {
+        city: "Jacksonville",
+        state: "FL",
+        zips: ["32202", "32204", "32205", "32207", "32216", "32224", "32256"],
+    },
 ]
 
 const LANGUAGE_VALUES = [
@@ -273,6 +274,20 @@ export async function seedCompanies() {
         leavesByRoot.set(rootId, list)
     }
 
+    const cityRows = await db
+        .select({
+            id: cities.id,
+            name: cities.name,
+            stateId: cities.stateId,
+        })
+        .from(cities)
+    const cityIdByKey = new Map(
+        cityRows.map((row) => [`${row.name.toLowerCase()}|${row.stateId}`, row.id])
+    )
+    if (cityRows.length === 0) {
+        console.log("  • cities пуста — city_id будет null. Запусти pnpm db:geo:build-cities")
+    }
+
     console.log(
         `  • Generating ${FAKE_COMPANIES_COUNT} companies (${OWNED_COMPANIES_COUNT} owned, ${UNCLAIMED_COMPANIES_COUNT} unclaimed) across ${leaves.length} leaf categories...`
     )
@@ -369,6 +384,9 @@ export async function seedCompanies() {
             hqCity: location.city,
             hqState: location.state,
             hqZip: location.zips[0],
+            cityId:
+                cityIdByKey.get(`${location.city.toLowerCase()}|${location.state}`) ??
+                null,
             sCity: `${location.city} ${location.state}`,
             sZips: serviceZips,
             sArea: `${location.city} metro and nearby ZIP codes: ${serviceZips.join(", ")}.`,

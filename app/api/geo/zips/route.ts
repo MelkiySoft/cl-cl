@@ -6,6 +6,8 @@ export async function GET(request: NextRequest) {
     const q = request.nextUrl.searchParams.get("q") ?? ""
     const sCity = request.nextUrl.searchParams.get("sCity") ?? ""
     const parsed = parseServiceCityLabel(sCity)
+    const publicOnly = request.nextUrl.searchParams.get("publicOnly") === "1"
+    const activeOnly = request.nextUrl.searchParams.get("activeOnly") !== "0"
 
     const zipPrefix = q.replace(/\D/g, "")
     const searchStatewide = zipPrefix.length >= 2
@@ -14,7 +16,8 @@ export async function GET(request: NextRequest) {
         query: q,
         city: searchStatewide ? undefined : parsed?.city,
         stateId: parsed?.stateId,
-        publicOnly: !searchStatewide,
+        publicOnly,
+        activeOnly,
     })
 
     return NextResponse.json({ zips })

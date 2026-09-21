@@ -6,12 +6,15 @@ import {
     getCategoryTree,
 } from "@/lib/categories"
 import {
-    parseCatalogPath,
     buildCatalogPath,
     type CatalogSearchParams,
 } from "@/lib/catalog-path"
-import { formatServiceCityLabel, getPublicCityBySlug } from "@/lib/geo"
-import { SSG_CITY_SLUGS } from "@/config/cities"
+import { resolveCatalogPath } from "@/lib/catalog-path-server"
+import {
+    formatServiceCityLabel,
+    getPublicCityBySlug,
+    getPublicCitySlugs,
+} from "@/lib/geo"
 import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
 import {
     CatalogListing,
@@ -49,7 +52,8 @@ export async function generateStaticParams() {
 
         walk(tree)
 
-        for (const citySlug of SSG_CITY_SLUGS) {
+        const citySlugs = await getPublicCitySlugs()
+        for (const citySlug of citySlugs) {
             paths.push({ path: [citySlug] })
             for (const root of tree) {
                 paths.push({ path: [citySlug, root.slug] })
@@ -65,7 +69,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { path } = await params
-    const { citySlug, categorySlugs } = parseCatalogPath(path)
+    const { citySlug, categorySlugs } = await resolveCatalogPath(path)
 
     const [city, category] = await Promise.all([
         citySlug ? getPublicCityBySlug(citySlug) : Promise.resolve(null),
@@ -114,7 +118,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CatalogPage({ params, searchParams }: PageProps) {
     const { path } = await params
-    const { citySlug, categorySlugs } = parseCatalogPath(path)
+    const { citySlug, categorySlugs } = await resolveCatalogPath(path)
 
     const [tree, city, category] = await Promise.all([
         getCategoryTree(),
@@ -222,6 +226,7 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
                         <CatalogListing
                             searchParams={searchParams}
                             categoryId={category?.id ?? null}
+                            cityId={city?.id ?? null}
                             sCity={city ? formatServiceCityLabel(city.city, city.stateId) : null}
                         />
                     </Suspense>

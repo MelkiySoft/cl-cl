@@ -20,7 +20,7 @@ function run(command: string, args: string[]) {
 }
 
 async function main() {
-    console.log("\n🔁 Resetting app schema (geo_usa is kept)\n");
+    console.log("\n🔁 Resetting app schema (geo_usa, cities, city_zips are kept)\n");
 
     await dropAppTables();
 

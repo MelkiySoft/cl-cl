@@ -29,7 +29,12 @@ import {
 } from "@/lib/r2";
 import { slugify } from "@/lib/utils";
 import { companyAccessWhere, revalidateCompanyPaths } from "@/lib/company-access";
-import { getGeoCityByExactLabel, getGeoZips, getPublicCityByZip, normalizeZip } from "@/lib/geo";
+import {
+    getCityByZip,
+    getGeoCityByExactLabel,
+    getGeoZips,
+    normalizeZip,
+} from "@/lib/geo";
 
 import type { CompanyFormValues, CompanyCreateValues } from "@/lib/validations/company";
 import type { CompanyLinkType, DocumentType } from "@/db/schema";
@@ -209,12 +214,12 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
     }
 
     if (data.hqZip) {
-        const hqPublic = await getPublicCityByZip(data.hqZip);
-        if (!hqPublic) {
-            return { error: "Headquarters ZIP is not in a listed city" };
+        const hqCity = await getCityByZip(data.hqZip, { activeOnly: false });
+        if (!hqCity) {
+            return { error: "Headquarters ZIP is not in a known city" };
         }
-        data.hqCity = hqPublic.city;
-        data.hqState = hqPublic.stateId;
+        data.hqCity = hqCity.city;
+        data.hqState = hqCity.stateId;
     }
 
     try {
@@ -239,6 +244,7 @@ export async function updateCompany(    data: CompanyFormValues): Promise<Compan
                 hqCity: data.hqCity ?? null,
                 hqState: data.hqState ?? null,
                 hqZip: data.hqZip ?? null,
+                cityId: serviceCity.id,
                 sCity: serviceCity.label,
                 sZips: serviceZips,
                 sArea: data.sArea ?? null,

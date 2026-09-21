@@ -287,7 +287,7 @@ function HqZipField({
         if (q.length < 2) return;
 
         const timer = window.setTimeout(() => {
-            void fetch(`/api/geo/zips?q=${encodeURIComponent(q)}`)
+            void fetch(`/api/geo/zips?q=${encodeURIComponent(q)}&activeOnly=0`)
                 .then((res) => res.json())
                 .then((data: { zips?: ZipSuggestion[] }) => {
                     setItems(data.zips ?? []);

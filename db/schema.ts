@@ -281,6 +281,11 @@ export const companies = pgTable("companies", {
         .default("weekly"),
     hoursNote: text("hours_note"),
 
+    // основной город карточки / витрины
+    cityId: integer("city_id").references(() => cities.id, {
+        onDelete: "set null",
+    }),
+
     // headquarters (временная упрощённая схема)
     hqAddressLine1: text("hq_address_line1"),
     hqCity: text("hq_city"),
@@ -311,6 +316,7 @@ export const companies = pgTable("companies", {
     index("idx_companies_user_id").on(t.userId),
     index("idx_companies_source").on(t.source),
     index("idx_companies_external_id").on(t.externalId),
+    index("idx_companies_city_id").on(t.cityId),
     index("idx_companies_hq_zip").on(t.hqZip),
     index("idx_companies_s_city").on(t.sCity),
     index("idx_companies_s_zips").using("gin", t.sZips),
@@ -410,6 +416,10 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
     owner: one(users, {
         fields: [companies.userId],
         references: [users.id],
+    }),
+    city: one(cities, {
+        fields: [companies.cityId],
+        references: [cities.id],
     }),
     images: many(companyImages),
     documents: many(companyDocuments),
@@ -530,6 +540,83 @@ export const geoUsa = pgTable("geo_usa",
     ]
 );
 
+// ============================================================
+// Cities (рабочая сущность сайта, собирается из geo_usa)
+// ============================================================
+
+export const cities = pgTable(
+    "cities",
+    {
+        id: serial("id").primaryKey(),
+
+        name: text("name").notNull(),
+        nameAscii: text("name_ascii").notNull(),
+
+        stateId: char("state_id", { length: 2 }).notNull(),
+        stateName: text("state_name"),
+
+        slug: text("slug").notNull(),
+
+        lat: numeric("lat", { precision: 10, scale: 6 }),
+        lng: numeric("lng", { precision: 10, scale: 6 }),
+
+        timezone: text("timezone"),
+        population: integer("population"),
+        density: numeric("density", { precision: 8, scale: 2 }),
+        ranking: smallint("ranking"),
+        incorporated: boolean("incorporated"),
+        countyName: text("county_name"),
+
+        isActive: boolean("is_active").notNull().default(true),
+        isPublic: boolean("is_public").notNull().default(false),
+
+        metaTitle: text("meta_title"),
+        metaDescription: text("meta_description"),
+        metaH1: text("meta_h1"),
+
+        createdAt: timestamp("created_at").defaultNow().notNull(),
+        updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    },
+    (t) => [
+        uniqueIndex("uq_cities_state_name_ascii").on(t.stateId, t.nameAscii),
+        uniqueIndex("uq_cities_slug").on(t.slug),
+        index("idx_cities_state").on(t.stateId),
+        index("idx_cities_name").on(t.name),
+        index("idx_cities_is_public").on(t.isPublic),
+        index("idx_cities_is_active").on(t.isActive),
+    ]
+);
+
+export const cityZips = pgTable(
+    "city_zips",
+    {
+        id: bigserial("id", { mode: "number" }).primaryKey(),
+        cityId: integer("city_id")
+            .notNull()
+            .references(() => cities.id, { onDelete: "cascade" }),
+        zip: char("zip", { length: 5 }).notNull(),
+        zipType: zipTypeEnum("zip_type"),
+        lat: numeric("lat", { precision: 10, scale: 6 }),
+        lng: numeric("lng", { precision: 10, scale: 6 }),
+        isPrimary: boolean("is_primary").notNull().default(false),
+    },
+    (t) => [
+        uniqueIndex("uq_city_zips_zip").on(t.zip),
+        index("idx_city_zips_city_id").on(t.cityId),
+    ]
+);
+
+export const citiesRelations = relations(cities, ({ many }) => ({
+    zips: many(cityZips),
+    companies: many(companies),
+}));
+
+export const cityZipsRelations = relations(cityZips, ({ one }) => ({
+    city: one(cities, {
+        fields: [cityZips.cityId],
+        references: [cities.id],
+    }),
+}));
 
 // ============================================================
 // Blog Categories

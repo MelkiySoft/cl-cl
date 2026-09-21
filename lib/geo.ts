@@ -1,24 +1,27 @@
 import { cache } from "react"
-import { and, eq, inArray, or, sql } from "drizzle-orm"
+import { unstable_cache } from "next/cache"
+import { and, asc, desc, eq, ilike, inArray, sql } from "drizzle-orm"
 
 import { db } from "@/db"
-import { geoUsa } from "@/db/schema"
-import {
-    getPublicCityByCityState,
-    getPublicCityMeta,
-    isPublicCitySlug,
-    PUBLIC_CITIES,
-    PUBLIC_CITY_SLUGS,
-    SSG_CITY_SLUGS,
-    type PublicCitySlug,
-} from "@/config/cities"
+import { cities, cityZips } from "@/db/schema"
 
 export type PublicCity = {
-    slug: PublicCitySlug
+    id: number
+    slug: string
     city: string
     stateId: string
     stateName: string | null
     zips: string[]
+}
+
+export type CityRecord = {
+    id: number
+    slug: string
+    city: string
+    stateId: string
+    stateName: string | null
+    label: string
+    isPublic: boolean
 }
 
 export type GeoCitySuggestion = {
@@ -32,6 +35,18 @@ export type GeoZipSuggestion = {
     city: string
     stateId: string
     label: string
+}
+
+export type GeoZipRecord = {
+    zip: string
+    city: string | null
+    stateId: string | null
+}
+
+export type ZipMapPoint = {
+    zip: string
+    latitude: string
+    longitude: string
 }
 
 export function normalizeZip(zip: string | null | undefined): string | null {
@@ -61,97 +76,217 @@ function likeContains(value: string): string {
     return `%${value.replace(/[%_\\]/g, "\\$&")}%`
 }
 
-export const getPublicCityBySlug = cache(
-    async (slug: string): Promise<PublicCity | null> => {
-        if (!isPublicCitySlug(slug)) return null
-        const meta = getPublicCityMeta(slug)
-        if (!meta) return null
+function toCityRecord(row: {
+    id: number
+    slug: string
+    name: string
+    stateId: string
+    stateName: string | null
+    isPublic: boolean
+}): CityRecord {
+    return {
+        id: row.id,
+        slug: row.slug,
+        city: row.name,
+        stateId: row.stateId,
+        stateName: row.stateName,
+        label: formatServiceCityLabel(row.name, row.stateId),
+        isPublic: row.isPublic,
+    }
+}
 
+async function zipsForCity(cityId: number): Promise<string[]> {
+    const rows = await db
+        .select({ zip: cityZips.zip })
+        .from(cityZips)
+        .where(eq(cityZips.cityId, cityId))
+
+    return [
+        ...new Set(
+            rows
+                .map((row) => normalizeZip(row.zip))
+                .filter((zip): zip is string => zip !== null)
+        ),
+    ]
+}
+
+async function toPublicCity(row: {
+    id: number
+    slug: string
+    name: string
+    stateId: string
+    stateName: string | null
+    isPublic: boolean
+}): Promise<PublicCity> {
+    return {
+        id: row.id,
+        slug: row.slug,
+        city: row.name,
+        stateId: row.stateId,
+        stateName: row.stateName,
+        zips: await zipsForCity(row.id),
+    }
+}
+
+export const getPublicCitySlugs = unstable_cache(
+    async (): Promise<string[]> => {
+        const rows = await db
+            .select({ slug: cities.slug })
+            .from(cities)
+            .where(and(eq(cities.isPublic, true), eq(cities.isActive, true)))
+            .orderBy(asc(cities.name))
+
+        return rows.map((row) => row.slug)
+    },
+    ["public-city-slugs"],
+    { revalidate: 60, tags: ["cities"] }
+)
+
+export const getPublicCityList = unstable_cache(
+    async (): Promise<
+        Array<{ slug: string; city: string; stateId: string; label: string }>
+    > => {
         const rows = await db
             .select({
-                city: geoUsa.city,
-                stateId: geoUsa.stateId,
-                stateName: geoUsa.stateName,
-                zip: geoUsa.zip,
+                slug: cities.slug,
+                name: cities.name,
+                stateId: cities.stateId,
             })
-            .from(geoUsa)
-            .where(
-                and(
-                    sql`lower(${geoUsa.city}) = ${meta.city.toLowerCase()}`,
-                    eq(geoUsa.stateId, meta.stateId),
-                    eq(geoUsa.isActive, true)
-                )
-            )
+            .from(cities)
+            .where(and(eq(cities.isPublic, true), eq(cities.isActive, true)))
+            .orderBy(desc(cities.population), asc(cities.name))
 
-        if (rows.length === 0) return null
+        return rows.map((row) => ({
+            slug: row.slug,
+            city: row.name,
+            stateId: row.stateId,
+            label: `${row.name}, ${row.stateId}`,
+        }))
+    },
+    ["public-city-list"],
+    { revalidate: 60, tags: ["cities"] }
+)
 
-        const zips = [
-            ...new Set(
-                rows
-                    .map((r) => normalizeZip(r.zip))
-                    .filter((z): z is string => z !== null)
+export const getPublicCityBySlug = cache(
+    async (slug: string): Promise<PublicCity | null> => {
+        const row = await db.query.cities.findFirst({
+            where: and(
+                eq(cities.slug, slug),
+                eq(cities.isPublic, true),
+                eq(cities.isActive, true)
             ),
-        ]
-
-        const first = rows[0]
-
-        return {
-            slug: meta.slug,
-            city: first.city ?? meta.city,
-            stateId: first.stateId ?? meta.stateId,
-            stateName: first.stateName,
-            zips,
-        }
+            columns: {
+                id: true,
+                slug: true,
+                name: true,
+                stateId: true,
+                stateName: true,
+                isPublic: true,
+            },
+        })
+        if (!row) return null
+        return toPublicCity(row)
     }
 )
 
 export const getSsgCities = cache(async (): Promise<PublicCity[]> => {
-    const cities = await Promise.all(
-        SSG_CITY_SLUGS.map((slug) => getPublicCityBySlug(slug))
-    )
-    return cities.filter((c): c is PublicCity => c !== null)
+    const slugs = await getPublicCitySlugs()
+    const list = await Promise.all(slugs.map((slug) => getPublicCityBySlug(slug)))
+    return list.filter((city): city is PublicCity => city !== null)
 })
+
+export async function getCityById(id: number): Promise<CityRecord | null> {
+    const row = await db.query.cities.findFirst({
+        where: and(eq(cities.id, id), eq(cities.isActive, true)),
+        columns: {
+            id: true,
+            slug: true,
+            name: true,
+            stateId: true,
+            stateName: true,
+            isPublic: true,
+        },
+    })
+    return row ? toCityRecord(row) : null
+}
+
+export async function getCityByNameState(
+    city: string,
+    stateId: string
+): Promise<CityRecord | null> {
+    const name = city.trim()
+    const state = stateId.trim().toUpperCase()
+    if (!name || state.length !== 2) return null
+
+    const row = await db.query.cities.findFirst({
+        where: and(
+            eq(cities.stateId, state),
+            sql`lower(${cities.name}) = ${name.toLowerCase()}`,
+            eq(cities.isActive, true)
+        ),
+        columns: {
+            id: true,
+            slug: true,
+            name: true,
+            stateId: true,
+            stateName: true,
+            isPublic: true,
+        },
+    })
+    return row ? toCityRecord(row) : null
+}
+
+export async function getCityByExactLabel(
+    label: string | null | undefined
+): Promise<CityRecord | null> {
+    const parsed = parseServiceCityLabel(label)
+    if (!parsed) return null
+    return getCityByNameState(parsed.city, parsed.stateId)
+}
+
+/** Город по ZIP. По умолчанию только is_active. */
+export async function getCityByZip(
+    zip: string | null | undefined,
+    opts?: { activeOnly?: boolean }
+): Promise<CityRecord | null> {
+    const normalized = normalizeZip(zip)
+    if (!normalized) return null
+
+    const filters = [eq(cityZips.zip, normalized)]
+    if (opts?.activeOnly !== false) {
+        filters.push(eq(cities.isActive, true))
+    }
+
+    const row = await db
+        .select({
+            id: cities.id,
+            slug: cities.slug,
+            name: cities.name,
+            stateId: cities.stateId,
+            stateName: cities.stateName,
+            isPublic: cities.isPublic,
+        })
+        .from(cityZips)
+        .innerJoin(cities, eq(cities.id, cityZips.cityId))
+        .where(and(...filters))
+        .limit(1)
+
+    return row[0] ? toCityRecord(row[0]) : null
+}
 
 export const getPublicCityByZip = cache(
     async (zip: string | null | undefined): Promise<PublicCity | null> => {
-        const normalized = normalizeZip(zip)
-        if (!normalized) return null
-
-        const row = await db
-            .select({
-                city: geoUsa.city,
-                stateId: geoUsa.stateId,
-            })
-            .from(geoUsa)
-            .where(and(eq(geoUsa.zip, normalized), eq(geoUsa.isActive, true)))
-            .limit(1)
-
-        if (!row[0]?.city || !row[0].stateId) return null
-        const meta = getPublicCityByCityState(row[0].city, row[0].stateId)
-        if (!meta) return null
-
-        return getPublicCityBySlug(meta.slug)
+        const city = await getCityByZip(zip)
+        if (!city?.isPublic) return null
+        return getPublicCityBySlug(city.slug)
     }
-)
-
-const publicCityFilter = or(
-    ...PUBLIC_CITIES.map((city) =>
-        and(
-            sql`lower(${geoUsa.city}) = ${city.city.toLowerCase()}`,
-            eq(geoUsa.stateId, city.stateId)
-        )
-    )
 )
 
 export const getPublicCityByServiceCity = cache(
     async (sCity: string | null | undefined): Promise<PublicCity | null> => {
-        const parsed = parseServiceCityLabel(sCity)
-        if (!parsed) return null
-
-        const meta = getPublicCityByCityState(parsed.city, parsed.stateId)
-        if (!meta) return null
-
-        return getPublicCityBySlug(meta.slug)
+        const city = await getCityByExactLabel(sCity)
+        if (!city?.isPublic) return null
+        return getPublicCityBySlug(city.slug)
     }
 )
 
@@ -160,30 +295,26 @@ export async function searchGeoCities(
     limit = 20
 ): Promise<GeoCitySuggestion[]> {
     const q = query.trim()
-
-    const filters = [eq(geoUsa.isActive, true), publicCityFilter]
+    const filters = [eq(cities.isActive, true)]
     if (q.length >= 1) {
-        filters.push(sql`${geoUsa.city} ilike ${likeContains(q)}`)
+        filters.push(ilike(cities.name, likeContains(q)))
     }
 
     const rows = await db
-        .selectDistinct({
-            city: geoUsa.city,
-            stateId: geoUsa.stateId,
+        .select({
+            name: cities.name,
+            stateId: cities.stateId,
         })
-        .from(geoUsa)
+        .from(cities)
         .where(and(...filters))
+        .orderBy(desc(cities.population), asc(cities.name))
         .limit(limit)
 
-    return rows
-        .filter((row): row is { city: string; stateId: string } =>
-            Boolean(row.city && row.stateId)
-        )
-        .map((row) => ({
-            city: row.city,
-            stateId: row.stateId,
-            label: formatServiceCityLabel(row.city, row.stateId),
-        }))
+    return rows.map((row) => ({
+        city: row.name,
+        stateId: row.stateId,
+        label: formatServiceCityLabel(row.name, row.stateId),
+    }))
 }
 
 export async function searchGeoZips(opts: {
@@ -192,80 +323,51 @@ export async function searchGeoZips(opts: {
     stateId?: string
     limit?: number
     publicOnly?: boolean
+    activeOnly?: boolean
 }): Promise<GeoZipSuggestion[]> {
     const limit = opts.limit ?? 20
     const zipPrefix = opts.query?.replace(/\D/g, "") ?? ""
 
-    const filters = [eq(geoUsa.isActive, true)]
-    if (opts.publicOnly !== false && publicCityFilter) {
-        filters.push(publicCityFilter)
+    const filters = []
+    if (opts.activeOnly !== false) filters.push(eq(cities.isActive, true))
+    if (opts.publicOnly) filters.push(eq(cities.isPublic, true))
+    if (opts.city) {
+        filters.push(sql`lower(${cities.name}) = ${opts.city.toLowerCase()}`)
     }
-
-    if (opts.city) filters.push(eq(geoUsa.city, opts.city))
-    if (opts.stateId) filters.push(eq(geoUsa.stateId, opts.stateId))
-    if (zipPrefix) {
-        filters.push(sql`${geoUsa.zip} like ${`${zipPrefix}%`}`)
-    }
+    if (opts.stateId) filters.push(eq(cities.stateId, opts.stateId))
+    if (zipPrefix) filters.push(sql`${cityZips.zip} like ${`${zipPrefix}%`}`)
 
     const rows = await db
         .select({
-            zip: geoUsa.zip,
-            city: geoUsa.city,
-            stateId: geoUsa.stateId,
+            zip: cityZips.zip,
+            name: cities.name,
+            stateId: cities.stateId,
         })
-        .from(geoUsa)
+        .from(cityZips)
+        .innerJoin(cities, eq(cities.id, cityZips.cityId))
         .where(and(...filters))
+        .orderBy(asc(cityZips.zip))
         .limit(limit)
 
     return rows
-        .filter((row): row is { zip: string; city: string; stateId: string } =>
-            Boolean(row.zip && row.city && row.stateId)
+        .filter((row): row is { zip: string; name: string; stateId: string } =>
+            Boolean(row.zip && row.name && row.stateId)
         )
         .map((row) => ({
             zip: row.zip,
-            city: row.city,
+            city: row.name,
             stateId: row.stateId,
-            label: `${row.zip} — ${formatServiceCityLabel(row.city, row.stateId)}`,
+            label: `${row.zip} — ${formatServiceCityLabel(row.name, row.stateId)}`,
         }))
 }
 
 export async function getGeoCityByExactLabel(label: string) {
-    const parsed = parseServiceCityLabel(label)
-    if (!parsed) return null
-
-    const row = await db.query.geoUsa.findFirst({
-        where: and(
-            eq(geoUsa.city, parsed.city),
-            eq(geoUsa.stateId, parsed.stateId),
-            eq(geoUsa.isActive, true),
-            publicCityFilter
-        ),
-        columns: {
-            city: true,
-            stateId: true,
-            slug: true,
-        },
-    })
-
-    if (!row?.city || !row.stateId || !row.slug || !isPublicCitySlug(row.slug)) {
-        return null
-    }
-
-    return {
-        city: row.city,
-        stateId: row.stateId,
-        label: formatServiceCityLabel(row.city, row.stateId),
-    }
+    return getCityByExactLabel(label)
 }
 
-export type GeoZipRecord = {
-    zip: string
-    city: string | null
-    stateId: string | null
-}
-
-/** Любой активный ZIP из geo_usa, без ограничения PUBLIC_CITIES */
-export async function getGeoZips(zips: string[]): Promise<Map<string, GeoZipRecord>> {
+export async function getGeoZips(
+    zips: string[]
+): Promise<Map<string, GeoZipRecord>> {
     const normalized = [
         ...new Set(
             zips
@@ -277,19 +379,20 @@ export async function getGeoZips(zips: string[]): Promise<Map<string, GeoZipReco
 
     const rows = await db
         .select({
-            zip: geoUsa.zip,
-            city: geoUsa.city,
-            stateId: geoUsa.stateId,
+            zip: cityZips.zip,
+            name: cities.name,
+            stateId: cities.stateId,
         })
-        .from(geoUsa)
-        .where(and(inArray(geoUsa.zip, normalized), eq(geoUsa.isActive, true)))
+        .from(cityZips)
+        .innerJoin(cities, eq(cities.id, cityZips.cityId))
+        .where(and(inArray(cityZips.zip, normalized), eq(cities.isActive, true)))
 
     const map = new Map<string, GeoZipRecord>()
     for (const row of rows) {
         if (!row.zip || map.has(row.zip)) continue
         map.set(row.zip, {
             zip: row.zip,
-            city: row.city,
+            city: row.name,
             stateId: row.stateId,
         })
     }
@@ -303,40 +406,23 @@ export async function getCoordsByServiceCity(sCity: string): Promise<{
     const parsed = parseServiceCityLabel(sCity)
     if (!parsed) return null
 
-    const row = await db.query.geoUsa.findFirst({
+    const row = await db.query.cities.findFirst({
         where: and(
-            eq(geoUsa.city, parsed.city),
-            eq(geoUsa.stateId, parsed.stateId),
-            eq(geoUsa.isActive, true)
+            sql`lower(${cities.name}) = ${parsed.city.toLowerCase()}`,
+            eq(cities.stateId, parsed.stateId),
+            eq(cities.isActive, true)
         ),
-        columns: {
-            cityLat: true,
-            cityLng: true,
-            zctaLat: true,
-            zctaLng: true,
-        },
+        columns: { lat: true, lng: true },
     })
-
     if (!row) return null
 
-    const latitude = String(row.cityLat ?? row.zctaLat ?? "")
-    const longitude = String(row.cityLng ?? row.zctaLng ?? "")
+    const latitude = String(row.lat ?? "")
+    const longitude = String(row.lng ?? "")
     if (!latitude || !longitude) return null
-
     return { latitude, longitude }
 }
 
-export { PUBLIC_CITY_SLUGS, SSG_CITY_SLUGS }
-
-export type ZipMapPoint = {
-    zip: string
-    latitude: string
-    longitude: string
-}
-
-export async function getCoordsByZips(
-    zips: string[]
-): Promise<ZipMapPoint[]> {
+export async function getCoordsByZips(zips: string[]): Promise<ZipMapPoint[]> {
     const normalized = [
         ...new Set(
             zips
@@ -348,20 +434,18 @@ export async function getCoordsByZips(
 
     const rows = await db
         .select({
-            zip: geoUsa.zip,
-            zctaLat: geoUsa.zctaLat,
-            zctaLng: geoUsa.zctaLng,
-            cityLat: geoUsa.cityLat,
-            cityLng: geoUsa.cityLng,
+            zip: cityZips.zip,
+            lat: cityZips.lat,
+            lng: cityZips.lng,
         })
-        .from(geoUsa)
-        .where(and(inArray(geoUsa.zip, normalized), eq(geoUsa.isActive, true)))
+        .from(cityZips)
+        .where(inArray(cityZips.zip, normalized))
 
     const byZip = new Map<string, ZipMapPoint>()
     for (const row of rows) {
         if (!row.zip || byZip.has(row.zip)) continue
-        const latitude = String(row.zctaLat ?? row.cityLat ?? "")
-        const longitude = String(row.zctaLng ?? row.cityLng ?? "")
+        const latitude = String(row.lat ?? "")
+        const longitude = String(row.lng ?? "")
         if (!latitude || !longitude) continue
         byZip.set(row.zip, { zip: row.zip, latitude, longitude })
     }

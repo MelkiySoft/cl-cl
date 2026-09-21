@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-18T08:46:44.993Z
+> Последнее обновление: 2026-09-21T12:03:16.902Z
 
 ```text
 ├── actions/
@@ -73,6 +73,8 @@
 │   │   │       └── route.ts
 │   │   └── geo/
 │   │       ├── cities/
+│   │       │   └── route.ts
+│   │       ├── public-cities/
 │   │       │   └── route.ts
 │   │       ├── zip/
 │   │       │   └── route.ts
@@ -150,7 +152,6 @@
 │   ├── providers.tsx
 │   └── theme-provider.tsx
 ├── config/
-│   └── cities.ts
 ├── data/
 │   ├── geo/
 │   │   ├── tl_2025_us_zcta520.csv
@@ -179,6 +180,7 @@
 │   ├── attributes.ts
 │   ├── auth.ts
 │   ├── blog-categories.ts
+│   ├── catalog-path-server.ts
 │   ├── catalog-path.ts
 │   ├── categories.ts
 │   ├── companies.ts
@@ -229,6 +231,7 @@
 │   └── window.svg
 ├── scripts/
 │   ├── geo/
+│   │   ├── build-cities.ts
 │   │   ├── export-to-xml.ts
 │   │   ├── generate-slugs.ts
 │   │   └── load-geo-usa.ts

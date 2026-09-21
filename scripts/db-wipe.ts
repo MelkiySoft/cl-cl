@@ -2,11 +2,11 @@ import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
 
-const GEO_TABLE = "geo_usa";
+const KEEP_TABLES = ["geo_usa", "cities", "city_zips"] as const;
 
 /**
- * Все таблицы public, кроме geo-справочника.
- * Список не храним в коде — иначе каждая новая таблица забывается в TRUNCATE.
+ * Все таблицы public, кроме geo-справочника и собранных городов.
+ * Список app-таблиц не храним в коде — иначе каждая новая таблица забывается в TRUNCATE.
  */
 function rowsOf<T extends Record<string, unknown>>(result: unknown): T[] {
     if (Array.isArray(result)) return result as T[];
@@ -22,11 +22,16 @@ function rowsOf<T extends Record<string, unknown>>(result: unknown): T[] {
 }
 
 async function appTableNames(): Promise<string[]> {
+    const keep = sql.join(
+        KEEP_TABLES.map((name) => sql`${name}`),
+        sql`, `
+    );
+
     const result = await db.execute(sql`
         SELECT tablename
         FROM pg_tables
         WHERE schemaname = 'public'
-          AND tablename <> ${GEO_TABLE}
+          AND tablename not in (${keep})
         ORDER BY tablename
     `);
 
@@ -55,7 +60,9 @@ export async function dropAppTables() {
         return;
     }
 
-    console.log(`→ Dropping ${tables.length} tables (keeping ${GEO_TABLE})...`);
+    console.log(
+        `→ Dropping ${tables.length} tables (keeping ${KEEP_TABLES.join(", ")})...`
+    );
     await db.execute(sql`DROP TABLE IF EXISTS ${qualifiedList(tables)} CASCADE`);
     console.log("✓ App tables dropped\n");
 }
@@ -68,7 +75,9 @@ export async function truncateAppTables() {
         return;
     }
 
-    console.log(`→ Truncating ${tables.length} tables (keeping ${GEO_TABLE})...`);
+    console.log(
+        `→ Truncating ${tables.length} tables (keeping ${KEEP_TABLES.join(", ")})...`
+    );
     await db.execute(
         sql`TRUNCATE TABLE ${qualifiedList(tables)} RESTART IDENTITY CASCADE`
     );

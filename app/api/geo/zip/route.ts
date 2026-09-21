@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+
 import { getPublicCityByZip } from "@/lib/geo"
 
 export async function GET(request: Request) {

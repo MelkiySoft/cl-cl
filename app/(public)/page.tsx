@@ -1,34 +1,63 @@
-import { CompanyCarousel } from "@/components/site/company-carousel"
 import { ArticleCarousel } from "@/components/site/article-carousel"
+import { CompanyCarousel } from "@/components/site/company-carousel"
+import { CategorySlider } from "@/components/site/home/category-slider"
+import { CitiesBlock } from "@/components/site/home/cities-block"
+import { WhyChoose } from "@/components/site/home/why-choose"
+import {
+    HeroBanner,
+    type HeroCategoryOption,
+} from "@/components/site/home/hero-banner"
+import { getCategoryTree, type CategoryNode } from "@/lib/categories"
 
-export default function HomePage() {
+function flattenCategories(
+    nodes: CategoryNode[],
+    ancestors: { name: string; slug: string }[] = []
+): HeroCategoryOption[] {
+    return nodes.flatMap((node) => {
+        const path = [...ancestors, { name: node.name, slug: node.slug }]
+        const current: HeroCategoryOption = {
+            id: node.id,
+            name: node.name,
+            slugs: path.map((item) => item.slug),
+            label: path.map((item) => item.name).join(" / "),
+        }
+        return [current, ...flattenCategories(node.children, path)]
+    })
+}
+
+export default async function HomePage() {
+    const tree = await getCategoryTree()
+    const categories = flattenCategories(tree)
+
     return (
-        <div className="container mx-auto px-4 py-16 space-y-16">
-            <h1 className="text-4xl font-bold tracking-tight">
-                Find the best cleaning companies in the USA
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-                Browse verified providers by category, location and ratings.
-            </p>
+        <div className="space-y-24 pb-24">
+            <HeroBanner categories={categories} />
 
+            <div className="container mx-auto space-y-24 px-4">
+                <CategorySlider />
 
-            <CompanyCarousel
-                title="Featured Cleaning Companies"
-                companyIds={[5, 8, 2, 3, 1]}
-            />
+                <WhyChoose />
 
-            <CompanyCarousel
-                title="Top in Chicago"
-                companyIds={[6, 7, 9, 4, 10]}
-                autoplay
-            />
+                <CitiesBlock />
 
-            <ArticleCarousel
-                title="Latest Articles"
-                articleIds={[5, 36, 7, 60, 1]}
-                autoplay={{ delay: 1000 }}
-            />
+                <CompanyCarousel
+                    title="Featured Cleaning Companies"
+                    companyIds={[5, 8, 2, 3, 1]}
+                />
 
+                <CompanyCarousel
+                    title="Top in Orlando"
+                    companyIds={[6, 7, 9, 4, 10]}
+                    autoplay
+                />
+
+{/*                <ArticleCarousel
+                    title="Latest Articles"
+                    articleIds={[5, 36, 7, 60, 1]}
+                    autoplay={{ delay: 1000 }}
+                />*/}
+
+            </div>
         </div>
     )
 }

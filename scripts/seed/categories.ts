@@ -9,6 +9,7 @@ type SeedCategory = {
     metaDescription?: string | null;
     metaKeyword?: string | null;
     metaH1?: string | null;
+    image?: string | null;
     top?: boolean;
     column?: number;
     sortOrder?: number;
@@ -265,6 +266,7 @@ async function insertTree(
                 metaDescription: item.metaDescription ?? null,
                 metaKeyword: item.metaKeyword ?? null,
                 metaH1: item.metaH1 ?? null,
+                image: item.image ?? `/demo/category/${item.slug}.jpg`,
                 top: item.top ?? false,
                 column: item.column ?? 1,
                 sortOrder: item.sortOrder ?? 0,

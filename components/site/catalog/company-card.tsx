@@ -47,20 +47,20 @@ function TrustBadges({ company }: { company: CatalogCompany }) {
     return (
         <div className="flex flex-wrap gap-1.5">
             {company.isInsured && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 text-[11px] font-medium">
-                    <Shield className="size-3" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-success-muted text-success px-2.5 py-0.5 text-base">
+                    <Shield className="size-3.5" />
                     Insured
                 </span>
             )}
             {company.isBonded && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-[11px] font-medium">
-                    <BadgeCheck className="size-3" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent text-primary px-2.5 py-0.5 text-base">
+                    <BadgeCheck className="size-3.5" />
                     Bonded
                 </span>
             )}
             {company.isLicensed && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-400 px-2 py-0.5 text-[11px] font-medium">
-                    <Award className="size-3" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent text-primary px-2.5 py-0.5 text-base">
+                    <Award className="size-3.5" />
                     Licensed
                 </span>
             )}
@@ -78,7 +78,7 @@ function TileCard({
     priority: boolean
 }) {
     return (
-        <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
+        <Card className="h-full overflow-hidden rounded-lg transition-shadow hover:shadow-md">
             <div className="relative aspect-[16/9] bg-muted overflow-hidden">
                 {company.image ? (
                     <Image
@@ -97,19 +97,19 @@ function TileCard({
             </div>
 
             <div className="flex flex-col gap-2 p-4 pt-3">
-                <h3 className="font-semibold text-base leading-snug group-hover:text-primary transition-colors line-clamp-1">
+                <h3 className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors line-clamp-1">
                     {company.name}
                 </h3>
 
                 {location && (
-                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="size-3.5 shrink-0" />
+                    <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="size-4 shrink-0" />
                         {location}
                     </p>
                 )}
 
                 {company.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                    <p className="text-base text-muted-foreground line-clamp-2">
                         {company.description}
                     </p>
                 )}
@@ -132,7 +132,7 @@ function RowCard({
     return (
         <Card
             className={cn(
-                "flex-row items-stretch gap-0 py-0",
+                "flex-row items-stretch gap-0 py-0 rounded-lg",
                 "transition-shadow hover:shadow-md"
             )}
         >
@@ -153,25 +153,38 @@ function RowCard({
                 )}
             </div>
 
-            <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-4 py-3 sm:px-5 sm:py-4">
-                <h3 className="font-semibold text-base sm:text-lg leading-snug group-hover:text-primary transition-colors line-clamp-2">
-                    {company.name}
-                </h3>
+            <div className="flex min-w-0 flex-1 items-center gap-4 px-4 py-3 sm:px-5 sm:py-4">
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+                    <h3 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10 group-hover:text-primary transition-colors line-clamp-2">
+                        {company.name}
+                    </h3>
 
-                {location && (
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MapPin className="size-3.5 shrink-0" />
-                        <span className="truncate">{location}</span>
-                    </p>
-                )}
+                    {location && (
+                        <p className="flex items-center gap-1.5 text-lg text-muted-foreground">
+                            <MapPin className="size-4 shrink-0" />
+                            <span className="truncate">{location}</span>
+                        </p>
+                    )}
 
-                {company.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 sm:line-clamp-3 leading-relaxed">
-                        {company.description}
-                    </p>
-                )}
+                    {company.description && (
+                        <p className="text-base text-muted-foreground line-clamp-2 sm:line-clamp-3">
+                            {company.description}
+                        </p>
+                    )}
 
-                <TrustBadges company={company} />
+                    <TrustBadges company={company} />
+                </div>
+
+                <span
+                    className={cn(
+                        "hidden sm:inline-flex shrink-0 items-center justify-center",
+                        "rounded-lg bg-primary px-5 py-2 text-primary-foreground",
+                        "text-2xl font-semibold whitespace-nowrap",
+                        "transition-opacity group-hover:opacity-90"
+                    )}
+                >
+                    View profile
+                </span>
             </div>
         </Card>
     )

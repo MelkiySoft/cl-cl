@@ -206,9 +206,9 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
             </nav>
 
             <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+                <h1 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-5xl md:leading-[3.5rem]">{title}</h1>
                 {category?.description && (
-                    <p className="mt-2 text-muted-foreground max-w-2xl">
+                    <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
                         {category.description}
                     </p>
                 )}

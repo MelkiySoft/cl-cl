@@ -15,13 +15,13 @@ export function CompanyHours({ mode, hours, note }: Props) {
     if (mode === "always_open") {
         return (
             <section>
-                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Clock className="size-4" />
+                <h2 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10 mb-3 flex items-center gap-2">
+                    <Clock className="size-6" />
                     Hours
                 </h2>
-                <p className="text-sm">Open 24/7</p>
+                <p className="text-lg font-bold">Open 24/7</p>
                 {note ? (
-                    <p className="mt-2 text-sm text-muted-foreground">{note}</p>
+                    <p className="mt-2 text-lg text-muted-foreground">{note}</p>
                 ) : null}
             </section>
         )
@@ -30,13 +30,13 @@ export function CompanyHours({ mode, hours, note }: Props) {
     if (mode === "by_appointment") {
         return (
             <section>
-                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Clock className="size-4" />
+                <h2 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10 mb-3 flex items-center gap-2">
+                    <Clock className="size-6" />
                     Hours
                 </h2>
-                <p className="text-sm">By appointment</p>
+                <p className="text-lg font-bold">By appointment</p>
                 {note ? (
-                    <p className="mt-2 text-sm text-muted-foreground">{note}</p>
+                    <p className="mt-2 text-lg text-muted-foreground">{note}</p>
                 ) : null}
             </section>
         )
@@ -47,25 +47,25 @@ export function CompanyHours({ mode, hours, note }: Props) {
 
     return (
         <section>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Clock className="size-4" />
+            <h2 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10 mb-3 flex items-center gap-2">
+                <Clock className="size-6" />
                 Hours
             </h2>
             {rows.length > 0 && (
-                <dl className="space-y-1.5 text-sm">
+                <dl className="space-y-1.5 text-lg text-muted-foreground">
                     {rows.map((row) => (
                         <div
                             key={row.label}
-                            className="flex justify-between gap-4"
+                            className="grid grid-cols-[minmax(7rem,auto)_1fr] items-baseline gap-x-6"
                         >
-                            <dt className="text-muted-foreground">{row.label}</dt>
-                            <dd className="font-medium">{row.value}</dd>
+                            <dt>{row.label}</dt>
+                            <dd className="font-bold">{row.value}</dd>
                         </div>
                     ))}
                 </dl>
             )}
             {note ? (
-                <p className="mt-2 text-sm text-muted-foreground">{note}</p>
+                <p className="mt-2 text-lg text-muted-foreground">{note}</p>
             ) : null}
         </section>
     )

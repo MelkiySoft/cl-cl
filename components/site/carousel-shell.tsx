@@ -1,10 +1,10 @@
 "use client"
 
 import Autoplay from "embla-carousel-autoplay"
+
 import {
     Carousel,
     CarouselContent,
-    CarouselItem,
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
@@ -19,22 +19,27 @@ type CarouselShellProps = {
     loop?: boolean
 }
 
+const arrowClass =
+    "size-12 bg-white/90 text-foreground border-0 shadow-sm disabled:hidden [&_svg]:!size-6"
+
 export function CarouselShell({
                                   children,
                                   className,
                                   autoplay = false,
                                   loop = false,
                               }: CarouselShellProps) {
-    const plugins =
-        autoplay
-            ? [
-                Autoplay({
-                    delay: typeof autoplay === "object" ? autoplay.delay ?? 4000 : 4000,
-                    stopOnInteraction: true,
-                    stopOnMouseEnter: true,
-                }),
-            ]
-            : undefined
+    const plugins = autoplay
+        ? [
+            Autoplay({
+                delay:
+                    typeof autoplay === "object"
+                        ? (autoplay.delay ?? 4000)
+                        : 4000,
+                stopOnInteraction: true,
+                stopOnMouseEnter: true,
+            }),
+        ]
+        : undefined
 
     return (
         <Carousel
@@ -49,8 +54,8 @@ export function CarouselShell({
                 {children}
             </CarouselContent>
 
-            <CarouselPrevious className="-left-3 md:-left-5" />
-            <CarouselNext className="-right-3 md:-right-5" />
+            <CarouselPrevious className={cn("left-2", arrowClass)} />
+            <CarouselNext className={cn("right-2", arrowClass)} />
         </Carousel>
     )
 }

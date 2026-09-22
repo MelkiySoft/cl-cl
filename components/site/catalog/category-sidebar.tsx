@@ -13,6 +13,9 @@ type CategorySidebarProps = {
     citySlug?: string | null
 }
 
+/**
+ * Recursive component that renders a single category item and its children.
+ */
 function CategoryItem({
                           node,
                           depth = 0,
@@ -36,10 +39,10 @@ function CategoryItem({
             <AppLink
                 href={href}
                 className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-lg transition-colors",
                     isActive
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        ? "bg-accent text-primary font-medium"
+                        : "text-muted-foreground hover:bg-accent hover:text-primary"
                 )}
                 style={{ paddingLeft: `${0.625 + depth * 0.75}rem` }}
             >
@@ -67,13 +70,16 @@ function CategoryItem({
     )
 }
 
+/**
+ * Sidebar that displays a hierarchical list of categories.
+ */
 export function CategorySidebar({
                                     tree,
                                     currentSlug,
                                     citySlug,
                                 }: CategorySidebarProps) {
     return (
-        <aside className="hidden w-56 shrink-0 lg:block">
+        <aside className="hidden w-64 shrink-0 lg:block">
             <div className="sticky top-20 space-y-1">
                 <p className="px-2.5 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Categories
@@ -82,10 +88,10 @@ export function CategorySidebar({
                 <AppLink
                     href={buildCatalogPath({ citySlug })}
                     className={cn(
-                        "flex items-center rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                        "flex items-center rounded-md px-2.5 py-1.5 text-lg transition-colors",
                         !currentSlug
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            ? "bg-accent text-primary font-medium"
+                            : "text-muted-foreground hover:bg-accent hover:text-primary"
                     )}
                 >
                     All categories

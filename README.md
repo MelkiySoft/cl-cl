@@ -33,6 +33,6 @@ https://github.com/MelkiySoft/cl-cl/blob/main/db/schema.ts
 5. pnpm db:geo:export-to-xml     # exports/geo_usa_full.xml
 
 `geo_usa` — справочник загрузки. Сайт в рантайме читает `cities` / `city_zips`.
-Витрина каталога: `cities.is_public = true`. Стартовый набор (Chicago IL, Jacksonville FL, Orlando FL) включается скриптом сборки и не сбрасывается при повторном запуске.
+Витрина каталога: `cities.is_public = true`. Стартовый набор (Jacksonville FL, Orlando FL) включается скриптом сборки и не сбрасывается при повторном запуске.
 
 `pnpm db:reset` / `pnpm db:seed` не трогают `geo_usa`, `cities`, `city_zips`.

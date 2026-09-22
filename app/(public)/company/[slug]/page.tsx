@@ -92,11 +92,8 @@ export default async function CompanyPage({ params }: PageProps) {
         .filter(Boolean)
         .join(", ")
 
-    // галерея: главное фото + дополнительные (без дублей)
-    const galleryImages = [
-        ...(company.image ? [{ id: 0, image: company.image, sortOrder: -1 }] : []),
-        ...company.images.filter((img) => img.image !== company.image),
-    ]
+    // галерея — только фото работ; логотип компании показывается у названия
+    const galleryImages = company.images.filter((img) => img.image !== company.image)
     const website = getWebsiteUrl(company.links)
     const otherLinks = sortCompanyLinks(company.links).filter(
         (l) => l.type !== "website"
@@ -166,36 +163,50 @@ export default async function CompanyPage({ params }: PageProps) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* ===== Main content ===== */}
                 <div className="lg:col-span-2 space-y-8">
-                    {/* Title + badges */}
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+                    {/* Title + mini logo + badges */}
+                    <div className="flex items-start gap-4">
+                        {company.image ? (
+                            <div className="relative size-16 sm:size-20 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10">
+                                <Image
+                                    src={company.image}
+                                    alt={`${company.name} logo`}
+                                    fill
+                                    className="object-contain p-1"
+                                    sizes="80px"
+                                    priority
+                                />
+                            </div>
+                        ) : null}
+                        <div className="min-w-0">
+                            <h1 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-5xl md:leading-[3.5rem]">{title}</h1>
 
-                        {location && (
-                            <p className="mt-2 flex items-center gap-1.5 text-muted-foreground">
-                                <MapPin className="size-4 shrink-0" />
-                                {location}
-                            </p>
-                        )}
+                            {location && (
+                                <p className="mt-2 flex items-center gap-1.5 text-lg text-muted-foreground">
+                                    <MapPin className="size-4 shrink-0" />
+                                    {location}
+                                </p>
+                            )}
 
-                        <div className="mt-3 flex flex-wrap gap-2">
-                            {company.isInsured && (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-medium">
-                  <Shield className="size-3.5" />
-                  Insured
-                </span>
-                            )}
-                            {company.isBonded && (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 px-3 py-1 text-xs font-medium">
-                  <BadgeCheck className="size-3.5" />
-                  Bonded
-                </span>
-                            )}
-                            {company.isLicensed && (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-400 px-3 py-1 text-xs font-medium">
-                  <Award className="size-3.5" />
-                  Licensed
-                </span>
-                            )}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {company.isInsured && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-success-muted text-success px-3 py-1 text-base">
+                                        <Shield className="size-3.5" />
+                                        Insured
+                                    </span>
+                                )}
+                                {company.isBonded && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent text-primary px-3 py-1 text-base">
+                                        <BadgeCheck className="size-3.5" />
+                                        Bonded
+                                    </span>
+                                )}
+                                {company.isLicensed && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent text-primary px-3 py-1 text-base">
+                                        <Award className="size-3.5" />
+                                        Licensed
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -208,8 +219,8 @@ export default async function CompanyPage({ params }: PageProps) {
                     {/* Description */}
                     {company.description && (
                         <section>
-                            <h2 className="text-lg font-semibold mb-3">About</h2>
-                            <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                            <h2 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10 mb-3">About</h2>
+                            <p className="text-lg text-muted-foreground whitespace-pre-line">
                                 {company.description}
                             </p>
                         </section>
@@ -225,38 +236,38 @@ export default async function CompanyPage({ params }: PageProps) {
 
                     {/* Details */}
                     <section>
-                        <h2 className="text-lg font-semibold mb-3">Details</h2>
+                        <h2 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10 mb-3">Details</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {company.yearFounded && (
-                                <div className="flex items-center gap-2.5 text-sm">
-                                    <Calendar className="size-4 text-muted-foreground shrink-0" />
-                                    <span className="text-muted-foreground">Founded:</span>
-                                    <span className="font-medium">{company.yearFounded}</span>
+                                <div className="flex items-center gap-2.5 text-lg text-muted-foreground">
+                                    <Calendar className="size-4 shrink-0" />
+                                    <span>Founded:</span>
+                                    <span className="font-bold">{company.yearFounded}</span>
                                 </div>
                             )}
                             {company.employeesCount && (
-                                <div className="flex items-center gap-2.5 text-sm">
-                                    <Users className="size-4 text-muted-foreground shrink-0" />
-                                    <span className="text-muted-foreground">Team size:</span>
-                                    <span className="font-medium">
-                    {company.employeesCount} employees
-                  </span>
+                                <div className="flex items-center gap-2.5 text-lg text-muted-foreground">
+                                    <Users className="size-4 shrink-0" />
+                                    <span>Team size:</span>
+                                    <span className="font-bold">
+                                        {company.employeesCount} employees
+                                    </span>
                                 </div>
                             )}
                             {company.businessStructure && (
-                                <div className="flex items-center gap-2.5 text-sm">
-                                    <Building2 className="size-4 text-muted-foreground shrink-0" />
-                                    <span className="text-muted-foreground">Structure:</span>
-                                    <span className="font-medium capitalize">
-                    {company.businessStructure.replace(/_/g, " ")}
-                  </span>
+                                <div className="flex items-center gap-2.5 text-lg text-muted-foreground">
+                                    <Building2 className="size-4 shrink-0" />
+                                    <span>Structure:</span>
+                                    <span className="font-bold capitalize">
+                                        {company.businessStructure.replace(/_/g, " ")}
+                                    </span>
                                 </div>
                             )}
                             {company.legalName && company.legalName !== company.name && (
-                                <div className="flex items-center gap-2.5 text-sm">
-                                    <Building2 className="size-4 text-muted-foreground shrink-0" />
-                                    <span className="text-muted-foreground">Legal name:</span>
-                                    <span className="font-medium">{company.legalName}</span>
+                                <div className="flex items-center gap-2.5 text-lg text-muted-foreground">
+                                    <Building2 className="size-4 shrink-0" />
+                                    <span>Legal name:</span>
+                                    <span className="font-bold">{company.legalName}</span>
                                 </div>
                             )}
                         </div>
@@ -265,13 +276,13 @@ export default async function CompanyPage({ params }: PageProps) {
                     {/* Categories */}
                     {company.categories.length > 0 && (
                         <section>
-                            <h2 className="text-lg font-semibold mb-3">Services</h2>
+                            <h2 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10 mb-3">Services</h2>
                             <div className="flex flex-wrap gap-2">
                                 {company.categories.map((cat) => (
                                     <AppLink
                                         key={cat.id}
                                         href={`/catalog/${cat.slug}`}
-                                        className="rounded-full border px-3 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                                        className="rounded-full border border-border px-3 py-1 text-base text-primary hover:bg-accent hover:border-transparent transition-colors"
                                     >
                                         {cat.name}
                                     </AppLink>
@@ -283,14 +294,14 @@ export default async function CompanyPage({ params }: PageProps) {
 
                 {/* ===== Sidebar ===== */}
                 <div className="lg:col-span-1">
-                    <Card className="sticky top-20 p-5 space-y-5">
-                        <h2 className="font-semibold text-lg">Contact</h2>
+                    <Card className="sticky top-20 rounded-lg p-5 space-y-5">
+                        <h2 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10">Contact</h2>
 
-                        <div className="space-y-3 text-sm">
+                        <div className="space-y-3 text-lg text-muted-foreground">
                             {company.phone && (
                                 <a
                                     href={`tel:${company.phone}`}
-                                    className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="flex items-center gap-2.5 hover:text-primary transition-colors"
                                 >
                                     <Phone className="size-4 shrink-0" />
                                     {company.phone}
@@ -300,7 +311,7 @@ export default async function CompanyPage({ params }: PageProps) {
                             {company.email && (
                                 <a
                                     href={`mailto:${company.email}`}
-                                    className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="flex items-center gap-2.5 hover:text-primary transition-colors"
                                 >
                                     <Mail className="size-4 shrink-0" />
                                     {company.email}
@@ -312,7 +323,7 @@ export default async function CompanyPage({ params }: PageProps) {
                                     href={website}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="flex items-center gap-2.5 hover:text-primary transition-colors"
                                 >
                                     <Globe className="size-4 shrink-0" />
                                     {website.replace(/^https?:\/\//, "")}
@@ -325,12 +336,12 @@ export default async function CompanyPage({ params }: PageProps) {
                                     href={link.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="flex items-center gap-2.5 hover:text-primary transition-colors"
                                 >
                                     <Globe className="size-4 shrink-0" />
                                     <span>
                                         {COMPANY_LINK_LABELS[link.type]}
-                                        <span className="ml-1 text-xs opacity-70">
+                                        <span className="ml-1 text-sm opacity-70">
                                             {displayLinkHost(link.url)}
                                         </span>
                                     </span>
@@ -338,7 +349,7 @@ export default async function CompanyPage({ params }: PageProps) {
                             ))}
 
                             {hqAddress && (
-                                <div className="flex items-start gap-2.5 text-muted-foreground">
+                                <div className="flex items-start gap-2.5">
                                     <MapPin className="size-4 shrink-0 mt-0.5" />
                                     <span>{hqAddress}</span>
                                 </div>
@@ -349,10 +360,14 @@ export default async function CompanyPage({ params }: PageProps) {
 
                         {/* CTA — без мессенджера пока */}
                         <div className="space-y-2">
-                            <Button className="w-full" size="lg" disabled>
+                            <Button
+                                className="w-full h-auto rounded-lg bg-primary text-primary-foreground text-2xl font-semibold py-2 hover:bg-primary/90 disabled:opacity-100 disabled:bg-primary disabled:text-primary-foreground"
+                                size="lg"
+                                disabled
+                            >
                                 Request a callback
                             </Button>
-                            <p className="text-xs text-center text-muted-foreground">
+                            <p className="text-sm text-center text-muted-foreground/40">
                                 Messaging coming soon
                             </p>
                         </div>
@@ -367,19 +382,19 @@ export default async function CompanyPage({ params }: PageProps) {
                             <>
                                 <Separator />
                                 <div className="space-y-3">
-                                    <h3 className="font-semibold text-sm">Service area</h3>
+                                    <h3 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-3xl md:leading-10">Service area</h3>
                                     {company.sCity && (
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-lg text-muted-foreground">
                                             {company.sCity}
                                         </p>
                                     )}
                                     {company.sZips.length > 0 && (
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-lg text-muted-foreground">
                                             ZIP: {company.sZips.join(", ")}
                                         </p>
                                     )}
                                     {company.sArea && (
-                                        <p className="text-sm text-muted-foreground whitespace-pre-line">
+                                        <p className="text-lg text-muted-foreground whitespace-pre-line">
                                             {company.sArea}
                                         </p>
                                     )}

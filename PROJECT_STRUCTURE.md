@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-21T12:03:16.902Z
+> Последнее обновление: 2026-09-22T10:35:43.401Z
 
 ```text
 ├── actions/
@@ -128,6 +128,11 @@
 │   │   │   ├── company-map-loader.tsx
 │   │   │   └── company-map.tsx
 │   │   ├── forms/
+│   │   ├── home/
+│   │   │   ├── category-slider.tsx
+│   │   │   ├── cities-block.tsx
+│   │   │   ├── hero-banner.tsx
+│   │   │   └── why-choose.tsx
 │   │   ├── layout/
 │   │   │   ├── catalog-menu.tsx
 │   │   │   ├── city-picker.tsx
@@ -198,6 +203,38 @@
 │   └── verification.log
 ├── public/
 │   ├── demo/
+│   │   ├── category/
+│   │   │   ├── air-duct-cleaning.jpg
+│   │   │   ├── airbnb-cleaning.jpg
+│   │   │   ├── cleaning-outside.jpg
+│   │   │   ├── commercial-cleaning.jpg
+│   │   │   ├── deep-cleaning.jpg
+│   │   │   ├── dry-cleaning.jpg
+│   │   │   ├── educational-facility-cleaning.jpg
+│   │   │   ├── green-cleaning.jpg
+│   │   │   ├── gutter-cleaning.jpg
+│   │   │   ├── hoarder-cleaning.jpg
+│   │   │   ├── house-cleaning.jpg
+│   │   │   ├── industrial-cleaning.jpg
+│   │   │   ├── janitorial-cleaning.jpg
+│   │   │   ├── junk-removal.jpg
+│   │   │   ├── laundry.jpg
+│   │   │   ├── maid-service.jpg
+│   │   │   ├── medical-facility-cleaning.jpg
+│   │   │   ├── mold-remediation.jpg
+│   │   │   ├── move-out-in-cleaning.jpg
+│   │   │   ├── office-cleaning.jpg
+│   │   │   ├── pest-control.jpg
+│   │   │   ├── pool-cleaning.jpg
+│   │   │   ├── post-construction-cleaning.jpg
+│   │   │   ├── pressure-washing.jpg
+│   │   │   ├── regular-cleaning.jpg
+│   │   │   ├── restaurant-cleaning.jpg
+│   │   │   ├── retail-store-cleaning.jpg
+│   │   │   ├── sewer-cleaning.jpg
+│   │   │   ├── upholstery-cleaning.jpg
+│   │   │   ├── vehicle-equipment-cleaning.jpg
+│   │   │   └── window-cleaning.jpg
 │   │   ├── article1.jpg
 │   │   ├── article2.jpg
 │   │   ├── article3.jpg
@@ -220,6 +257,7 @@
 │   │   ├── gallery7.jpg
 │   │   ├── gallery8.jpg
 │   │   ├── gallery9.jpg
+│   │   ├── hero-banner.jpg
 │   │   ├── logo.jpg
 │   │   ├── sparkle-1.jpg
 │   │   ├── sparkle-2.jpg

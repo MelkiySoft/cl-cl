@@ -114,11 +114,35 @@ const CITIES = [
         city: "Orlando",
         state: "FL",
         zips: ["32801", "32803", "32804", "32806", "32819", "32822", "32835"],
+        areas: [
+            "Downtown Orlando",
+            "Winter Park",
+            "College Park",
+            "Thornton Park",
+            "Lake Nona",
+            "Dr. Phillips",
+            "Baldwin Park",
+            "Mills 50",
+            "SoDo",
+            "Conway",
+        ],
     },
     {
         city: "Jacksonville",
         state: "FL",
         zips: ["32202", "32204", "32205", "32207", "32216", "32224", "32256"],
+        areas: [
+            "Downtown Jacksonville",
+            "Riverside",
+            "Avondale",
+            "San Marco",
+            "Springfield",
+            "Mandarin",
+            "Southside",
+            "Jacksonville Beaches",
+            "Arlington",
+            "Ortega",
+        ],
     },
 ]
 
@@ -334,6 +358,10 @@ export async function seedCompanies() {
         const hoursMode = HOURS_MODES[i % 11 === 0 ? 1 : i % 13 === 0 ? 2 : 0]
         const structure = BUSINESS_STRUCTURES[i % BUSINESS_STRUCTURES.length]
         const serviceZips = location.zips.slice(0, 1 + (i % location.zips.length))
+        const serviceAreas = location.areas.slice(
+            0,
+            1 + (i % location.areas.length)
+        )
         const pending = owned && i % 17 === 0
         const hidden = owned && i % 19 === 0
 
@@ -389,7 +417,7 @@ export async function seedCompanies() {
                 null,
             sCity: `${location.city} ${location.state}`,
             sZips: serviceZips,
-            sArea: `${location.city} metro and nearby ZIP codes: ${serviceZips.join(", ")}.`,
+            sArea: serviceAreas.join(", "),
             status: pending ? false : !hidden,
             moderationStatus: pending ? ("pending" as const) : ("approved" as const),
             moderationNote: pending ? "Waiting for document review." : null,

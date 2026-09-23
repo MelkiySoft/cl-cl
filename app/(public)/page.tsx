@@ -47,7 +47,13 @@ export default async function HomePage() {
 
                 <CompanyCarousel
                     title="Top in Orlando"
-                    companyIds={[6, 7, 9, 4, 10]}
+                    companyIds={[1, 3, 5, 7, 9]}
+                    autoplay
+                />
+
+                <CompanyCarousel
+                    title="Top in Jacksonville"
+                    companyIds={[2, 4, 6, 8, 10]}
                     autoplay
                 />
 

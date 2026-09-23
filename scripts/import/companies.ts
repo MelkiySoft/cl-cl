@@ -4,6 +4,8 @@
  *   pnpm db:import:companies
  *   pnpm db:import:companies -- --dry-run
  *   pnpm db:import:companies -- --limit=20
+ *   pnpm db:import:companies -- --start=20
+ *   pnpm db:import:companies -- --start=20 --limit=20
  *   pnpm db:import:companies -- --delete-local-images
  *
  * Картинки: data/import/companies/images/
@@ -103,6 +105,9 @@ const DRY_RUN = argv.has("--dry-run");
 const DELETE_LOCAL_IMAGES = argv.has("--delete-local-images");
 const LIMIT = Number(
     process.argv.find((arg) => arg.startsWith("--limit="))?.slice(8) ?? ""
+);
+const START = Number(
+    process.argv.find((arg) => arg.startsWith("--start="))?.slice(8) ?? ""
 );
 
 const logLines: string[] = [];
@@ -646,8 +651,14 @@ async function main() {
     if (!DRY_RUN) assertR2Env();
 
     const rows = loadCompaniesXml(XML_PATH).filter((row) => row.externalId && row.name);
-    const limited = Number.isFinite(LIMIT) && LIMIT > 0 ? rows.slice(0, LIMIT) : rows;
-    log(`Rows in file: ${rows.length}, processing: ${limited.length}`);
+    const start = Number.isFinite(START) && START > 0 ? Math.floor(START) : 0;
+    const limited =
+        Number.isFinite(LIMIT) && LIMIT > 0
+            ? rows.slice(start, start + LIMIT)
+            : rows.slice(start);
+    log(
+        `Rows in file: ${rows.length}, start: ${start}, processing: ${limited.length}`
+    );
 
     const { categoryBySlug, pathIdsByCategory, attrByName } = await loadCatalogs();
 

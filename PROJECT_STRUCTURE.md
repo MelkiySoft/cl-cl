@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-22T10:35:43.401Z
+> Последнее обновление: 2026-09-23T05:59:24.755Z
 
 ```text
 ├── actions/
@@ -75,6 +75,8 @@
 │   │       ├── cities/
 │   │       │   └── route.ts
 │   │       ├── public-cities/
+│   │       │   └── route.ts
+│   │       ├── suggest/
 │   │       │   └── route.ts
 │   │       ├── zip/
 │   │       │   └── route.ts

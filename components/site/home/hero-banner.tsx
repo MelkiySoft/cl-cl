@@ -17,6 +17,16 @@ export type HeroCategoryOption = {
     label: string
 }
 
+type LocationSuggestion = {
+    type: "city" | "zip"
+    slug: string
+    label: string
+    city: string
+    stateId: string
+    isPublic: boolean
+    zip?: string
+}
+
 type HeroBannerProps = {
     categories: HeroCategoryOption[]
 }
@@ -35,14 +45,23 @@ export function HeroBanner({ categories }: HeroBannerProps) {
     const [locationOverride, setLocationOverride] = useState<
         string | null | undefined
     >(undefined)
+    const [selectedLocation, setSelectedLocation] =
+        useState<LocationSuggestion | null>(null)
+    const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
+    const [suggestLoading, setSuggestLoading] = useState(false)
     const [zipError, setZipError] = useState<string | null>(null)
-    const [zipLoading, setZipLoading] = useState(false)
 
     const categoryRef = useRef<HTMLDivElement>(null)
     const locationRef = useRef<HTMLDivElement>(null)
 
     const selectedCitySlug =
         locationOverride === undefined ? citySlug : locationOverride
+
+    const selectedCity =
+        publicCities.find((city) => city.slug === selectedCitySlug) ?? null
+
+    const locationLabel =
+        selectedLocation?.label ?? selectedCity?.label ?? ""
 
     useEffect(() => {
         function onPointerDown(event: MouseEvent) {
@@ -54,8 +73,34 @@ export function HeroBanner({ categories }: HeroBannerProps) {
         return () => document.removeEventListener("mousedown", onPointerDown)
     }, [])
 
-    const selectedCity =
-        publicCities.find((city) => city.slug === selectedCitySlug) ?? null
+    useEffect(() => {
+        if (!locationOpen) return
+
+        const q = locationQuery.trim()
+        const controller = new AbortController()
+        const timer = window.setTimeout(() => {
+            setSuggestLoading(true)
+            void fetch(`/api/geo/suggest?q=${encodeURIComponent(q)}`, {
+                signal: controller.signal,
+            })
+                .then((res) => res.json())
+                .then((data: { suggestions?: LocationSuggestion[] }) => {
+                    setSuggestions(data.suggestions ?? [])
+                })
+                .catch((error: unknown) => {
+                    if (error instanceof DOMException && error.name === "AbortError") {
+                        return
+                    }
+                    setSuggestions([])
+                })
+                .finally(() => setSuggestLoading(false))
+        }, 250)
+
+        return () => {
+            window.clearTimeout(timer)
+            controller.abort()
+        }
+    }, [locationOpen, locationQuery])
 
     const filteredCategories = useMemo(() => {
         const q = categoryQuery.trim().toLowerCase()
@@ -67,97 +112,115 @@ export function HeroBanner({ categories }: HeroBannerProps) {
         )
     }, [categories, categoryQuery])
 
-    const filteredCities = useMemo(() => {
-        const q = locationQuery.trim().toLowerCase()
-        if (!q) return publicCities
-        return publicCities.filter(
-            (city) =>
-                city.label.toLowerCase().includes(q) ||
-                city.slug.includes(q) ||
-                city.city.toLowerCase().includes(q)
-        )
-    }, [locationQuery, publicCities])
-
     function pickCategory(item: HeroCategoryOption) {
         setSelectedCategory(item)
         setCategoryQuery("")
         setCategoryOpen(false)
     }
 
-    function pickCity(slug: string) {
-        setLocationOverride(slug)
+    function pickLocation(item: LocationSuggestion) {
+        setSelectedLocation(item)
         setLocationQuery("")
-        setZipError(null)
         setLocationOpen(false)
+        if (item.isPublic) {
+            setLocationOverride(item.slug)
+            setZipError(null)
+        } else {
+            setLocationOverride(null)
+            setZipError("We don't list this area yet")
+        }
+    }
+
+    function catalogSlugFromSuggestion(item: LocationSuggestion | null) {
+        if (!item?.isPublic) return null
+        return item.slug
     }
 
     async function resolveLocation(raw: string): Promise<string | null> {
         const value = raw.trim()
-        if (!value) return selectedCitySlug
+        if (!value) {
+            return catalogSlugFromSuggestion(selectedLocation) ?? selectedCitySlug
+        }
 
-        const digits = value.replace(/\D/g, "")
-        if (digits.length === 5 && /^\d{5}$/.test(digits)) {
-            setZipLoading(true)
-            setZipError(null)
-            try {
-                const res = await fetch(`/api/geo/zip?zip=${digits}`)
-                const data = await res.json()
-                if (!res.ok || !data.city?.slug) {
-                    setZipError("We don't list this area yet")
-                    setLocationOpen(true)
-                    return null
-                }
-                pickCity(data.city.slug)
-                return data.city.slug as string
-            } catch {
-                setZipError("We don't list this area yet")
-                setLocationOpen(true)
-                return null
-            } finally {
-                setZipLoading(false)
+        try {
+            const res = await fetch(
+                `/api/geo/suggest?q=${encodeURIComponent(value)}`
+            )
+            const data = (await res.json()) as {
+                suggestions?: LocationSuggestion[]
             }
-        }
+            const list = data.suggestions ?? []
 
-        const match = publicCities.find(
-            (city) =>
-                city.label.toLowerCase() === value.toLowerCase() ||
-                city.slug === value.toLowerCase() ||
-                city.city.toLowerCase() === value.toLowerCase()
-        )
-        if (match) {
-            pickCity(match.slug)
-            return match.slug
-        }
+            const digits = value.replace(/\D/g, "")
+            const exactZip =
+                digits.length === 5
+                    ? list.find((item) => item.type === "zip" && item.zip === digits)
+                    : undefined
+            if (exactZip) {
+                pickLocation(exactZip)
+                return catalogSlugFromSuggestion(exactZip)
+            }
 
-        if (filteredCities.length === 1) {
-            pickCity(filteredCities[0].slug)
-            return filteredCities[0].slug
-        }
+            const exactCity = list.find(
+                (item) =>
+                    item.type === "city" &&
+                    (item.label.toLowerCase() === value.toLowerCase() ||
+                        item.city.toLowerCase() === value.toLowerCase() ||
+                        item.slug === value.toLowerCase())
+            )
+            if (exactCity) {
+                pickLocation(exactCity)
+                return catalogSlugFromSuggestion(exactCity)
+            }
 
-        if (selectedCitySlug && !value) return selectedCitySlug
+            if (list.length === 1) {
+                pickLocation(list[0])
+                return catalogSlugFromSuggestion(list[0])
+            }
+        } catch {
+            setZipError("We don't list this area yet")
+            setLocationOpen(true)
+            return null
+        }
 
         setLocationOpen(true)
-        return selectedCitySlug
+        return catalogSlugFromSuggestion(selectedLocation) ?? selectedCitySlug
     }
 
     async function search() {
-        let nextCity = selectedCitySlug
-        const typedLocation = locationOpen || !selectedCity ? locationQuery : ""
+        let nextCity =
+            catalogSlugFromSuggestion(selectedLocation) ?? selectedCitySlug
+        const typedLocation =
+            locationOpen || !locationLabel ? locationQuery : ""
         if (typedLocation.trim()) {
             nextCity = await resolveLocation(typedLocation)
-            if (typedLocation.replace(/\D/g, "").length === 5 && !nextCity) {
+            if (
+                typedLocation.replace(/\D/g, "").length === 5 &&
+                !nextCity
+            ) {
+                setZipError("We don't list this area yet")
+                setLocationOpen(true)
                 return
             }
         }
 
+        if (selectedLocation && !selectedLocation.isPublic && !typedLocation.trim()) {
+            setZipError("We don't list this area yet")
+            setLocationOpen(true)
+            return
+        }
+
         let nextCategory = selectedCategory
-        const typedCategory = categoryOpen || !selectedCategory ? categoryQuery : ""
+        const typedCategory =
+            categoryOpen || !selectedCategory ? categoryQuery : ""
         if (!nextCategory && typedCategory.trim()) {
             const exact = filteredCategories.find(
                 (item) =>
                     item.name.toLowerCase() === typedCategory.trim().toLowerCase()
             )
-            nextCategory = exact ?? (filteredCategories.length === 1 ? filteredCategories[0] : null)
+            nextCategory =
+                exact ??
+                (filteredCategories.length === 1 ? filteredCategories[0] : null)
         }
 
         router.push(
@@ -274,13 +337,14 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                             <input
                                 type="text"
                                 value={
-                                    locationOpen || !selectedCity
+                                    locationOpen || !locationLabel
                                         ? locationQuery
-                                        : selectedCity.label
+                                        : locationLabel
                                 }
                                 placeholder="ZIP or city"
                                 onChange={(e) => {
                                     setLocationQuery(e.target.value)
+                                    setSelectedLocation(null)
                                     setZipError(null)
                                     setLocationOpen(true)
                                 }}
@@ -292,11 +356,12 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                                 autoComplete="off"
                                 aria-label="ZIP or city"
                             />
-                            {selectedCity && !locationOpen && (
+                            {locationLabel && !locationOpen && (
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setLocationOverride(null)
+                                        setSelectedLocation(null)
                                         setLocationQuery("")
                                         setZipError(null)
                                     }}
@@ -309,9 +374,9 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                         </div>
                         {locationOpen && (
                             <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
-                                {zipLoading && (
+                                {suggestLoading && (
                                     <p className="px-3 py-2 text-sm text-muted-foreground">
-                                        Looking up ZIP…
+                                        Searching…
                                     </p>
                                 )}
                                 {zipError && (
@@ -319,26 +384,32 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                                         {zipError}
                                     </p>
                                 )}
-                                {!zipLoading &&
-                                    filteredCities.length === 0 &&
+                                {!suggestLoading &&
+                                    suggestions.length === 0 &&
                                     !zipError && (
                                         <p className="px-3 py-2 text-sm text-muted-foreground">
-                                            No cities found
+                                            No cities or ZIPs found
                                         </p>
                                     )}
-                                {!zipLoading &&
-                                    filteredCities.map((city) => (
+                                {!suggestLoading &&
+                                    suggestions.map((item) => (
                                         <button
-                                            key={city.slug}
+                                            key={`${item.type}-${item.zip ?? item.slug}`}
                                             type="button"
-                                            onClick={() => pickCity(city.slug)}
+                                            onClick={() => pickLocation(item)}
                                             className={cn(
-                                                "flex w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                                                city.slug === selectedCitySlug &&
+                                                "flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+                                                item.slug === selectedCitySlug &&
+                                                item.type === "city" &&
                                                 "bg-accent font-medium"
                                             )}
                                         >
-                                            {city.label}
+                                            <span>{item.label}</span>
+                                            {item.type === "zip" && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    ZIP
+                                                </span>
+                                            )}
                                         </button>
                                     ))}
                             </div>

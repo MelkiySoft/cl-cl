@@ -2,8 +2,6 @@ import Image from "next/image"
 import { and, asc, eq, isNull } from "drizzle-orm"
 
 import { AppLink } from "@/components/ui/app-link"
-import { CarouselItem } from "@/components/ui/carousel"
-import { CarouselShell } from "@/components/site/carousel-shell"
 import { db } from "@/db"
 import { categories } from "@/db/schema"
 import { buildCatalogPath } from "@/lib/catalog-path"
@@ -28,39 +26,35 @@ export async function CategorySlider() {
                 Explore services
             </h2>
 
-            <CarouselShell loop={roots.length > 4}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {roots.map((category, index) => {
                     const src =
                         category.image || `/demo/category/${category.slug}.jpg`
 
                     return (
-                        <CarouselItem
+                        <AppLink
                             key={category.id}
-                            className="pl-4 basis-[78%] sm:basis-1/2 lg:basis-1/4"
+                            href={buildCatalogPath({
+                                categorySlugs: [category.slug],
+                            })}
+                            className="group relative block overflow-hidden rounded-xl aspect-[4/3] bg-muted"
                         >
-                            <AppLink
-                                href={buildCatalogPath({
-                                    categorySlugs: [category.slug],
-                                })}
-                                className="group relative block overflow-hidden rounded-xl aspect-[4/3] bg-muted"
-                            >
-                                <Image
-                                    src={src}
-                                    alt={category.name}
-                                    fill
-                                    priority={index < 4}
-                                    className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                                    sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 25vw"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                                <span className="absolute inset-x-0 bottom-0 p-4 text-lg font-semibold text-white">
-                                    {category.name}
-                                </span>
-                            </AppLink>
-                        </CarouselItem>
+                            <Image
+                                src={src}
+                                alt={category.name}
+                                fill
+                                priority={index < 4}
+                                className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                            <span className="absolute inset-x-0 bottom-0 p-4 text-lg font-semibold text-white">
+                                {category.name}
+                            </span>
+                        </AppLink>
                     )
                 })}
-            </CarouselShell>
+            </div>
         </section>
     )
 }

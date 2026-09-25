@@ -324,16 +324,27 @@ export default async function CatalogPage({
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8">
-                <CatalogFiltersUI
-                    activeTokens={filters.tokens}
-                    basePath={basePath}
-                    catalogCitySlug={city?.slug ?? null}
-                    catalogCityLabel={
-                        city
-                            ? formatServiceCityLabel(city.city, city.stateId)
-                            : null
+                <Suspense
+                    fallback={
+                        <aside className="hidden w-64 shrink-0 lg:block">
+                            <div className="sticky top-20 h-48 animate-pulse rounded-xl border bg-muted/40" />
+                        </aside>
                     }
-                />
+                >
+                    <CatalogFiltersUI
+                        activeTokens={filters.tokens}
+                        basePath={basePath}
+                        catalogCitySlug={city?.slug ?? null}
+                        catalogCityLabel={
+                            city
+                                ? formatServiceCityLabel(
+                                    city.city,
+                                    city.stateId
+                                )
+                                : null
+                        }
+                    />
+                </Suspense>
 
                 <div className="flex-1 min-w-0">
                     <Suspense fallback={<CatalogListingFallback />}>

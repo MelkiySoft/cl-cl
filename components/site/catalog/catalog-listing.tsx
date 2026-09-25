@@ -5,6 +5,10 @@ import {
     parseCatalogSearchParams,
     type CatalogSearchParams,
 } from "@/lib/catalog-path"
+import {
+    EMPTY_FILTERS,
+    type CatalogFilters,
+} from "@/lib/catalog-filters"
 import { CatalogToolbar } from "@/components/site/catalog/catalog-toolbar"
 import { CatalogPagination } from "@/components/site/catalog/catalog-pagination"
 import { CompanyGrid } from "@/components/site/catalog/company-grid"
@@ -14,6 +18,7 @@ type CatalogListingProps = {
     categoryId: number | null
     cityId?: number | null
     sCity: string | null
+    filters?: CatalogFilters
 }
 
 export async function CatalogListing({
@@ -21,6 +26,7 @@ export async function CatalogListing({
                                          categoryId,
                                          cityId,
                                          sCity,
+                                         filters = EMPTY_FILTERS,
                                      }: CatalogListingProps) {
     const { sort, limit, page } = parseCatalogSearchParams(await searchParams)
 
@@ -28,6 +34,7 @@ export async function CatalogListing({
         categoryId,
         cityId,
         sCity,
+        filters,
         sort,
         limit,
         page,

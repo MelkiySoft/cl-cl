@@ -78,23 +78,27 @@ export function HeroBanner({ categories }: HeroBannerProps) {
 
         const q = locationQuery.trim()
         const controller = new AbortController()
+        // Старый список не показываем — loading уже выставлен в onFocus/onChange
         const timer = window.setTimeout(() => {
-            setSuggestLoading(true)
             void fetch(`/api/geo/suggest?q=${encodeURIComponent(q)}`, {
                 signal: controller.signal,
             })
                 .then((res) => res.json())
                 .then((data: { suggestions?: LocationSuggestion[] }) => {
                     setSuggestions(data.suggestions ?? [])
+                    setSuggestLoading(false)
                 })
                 .catch((error: unknown) => {
-                    if (error instanceof DOMException && error.name === "AbortError") {
+                    if (
+                        error instanceof DOMException &&
+                        error.name === "AbortError"
+                    ) {
                         return
                     }
                     setSuggestions([])
+                    setSuggestLoading(false)
                 })
-                .finally(() => setSuggestLoading(false))
-        }, 250)
+        }, 200)
 
         return () => {
             window.clearTimeout(timer)
@@ -136,10 +140,23 @@ export function HeroBanner({ categories }: HeroBannerProps) {
         return item.slug
     }
 
-    async function resolveLocation(raw: string): Promise<string | null> {
+    function zipFromSuggestion(item: LocationSuggestion | null): string | undefined {
+        if (item?.type === "zip" && item.zip) return item.zip
+        return undefined
+    }
+
+    async function resolveLocation(raw: string): Promise<{
+        citySlug: string | null
+        zip?: string
+    }> {
         const value = raw.trim()
         if (!value) {
-            return catalogSlugFromSuggestion(selectedLocation) ?? selectedCitySlug
+            return {
+                citySlug:
+                    catalogSlugFromSuggestion(selectedLocation) ??
+                    selectedCitySlug,
+                zip: zipFromSuggestion(selectedLocation),
+            }
         }
 
         try {
@@ -154,11 +171,16 @@ export function HeroBanner({ categories }: HeroBannerProps) {
             const digits = value.replace(/\D/g, "")
             const exactZip =
                 digits.length === 5
-                    ? list.find((item) => item.type === "zip" && item.zip === digits)
+                    ? list.find(
+                        (item) => item.type === "zip" && item.zip === digits
+                    )
                     : undefined
             if (exactZip) {
                 pickLocation(exactZip)
-                return catalogSlugFromSuggestion(exactZip)
+                return {
+                    citySlug: catalogSlugFromSuggestion(exactZip),
+                    zip: exactZip.zip,
+                }
             }
 
             const exactCity = list.find(
@@ -170,30 +192,43 @@ export function HeroBanner({ categories }: HeroBannerProps) {
             )
             if (exactCity) {
                 pickLocation(exactCity)
-                return catalogSlugFromSuggestion(exactCity)
+                return {
+                    citySlug: catalogSlugFromSuggestion(exactCity),
+                }
             }
 
             if (list.length === 1) {
                 pickLocation(list[0])
-                return catalogSlugFromSuggestion(list[0])
+                return {
+                    citySlug: catalogSlugFromSuggestion(list[0]),
+                    zip: zipFromSuggestion(list[0]),
+                }
             }
         } catch {
             setZipError("We don't list this area yet")
             setLocationOpen(true)
-            return null
+            return { citySlug: null }
         }
 
         setLocationOpen(true)
-        return catalogSlugFromSuggestion(selectedLocation) ?? selectedCitySlug
+        return {
+            citySlug:
+                catalogSlugFromSuggestion(selectedLocation) ?? selectedCitySlug,
+            zip: zipFromSuggestion(selectedLocation),
+        }
     }
 
     async function search() {
         let nextCity =
             catalogSlugFromSuggestion(selectedLocation) ?? selectedCitySlug
+        let nextZip = zipFromSuggestion(selectedLocation)
+
         const typedLocation =
             locationOpen || !locationLabel ? locationQuery : ""
         if (typedLocation.trim()) {
-            nextCity = await resolveLocation(typedLocation)
+            const resolved = await resolveLocation(typedLocation)
+            nextCity = resolved.citySlug
+            nextZip = resolved.zip
             if (
                 typedLocation.replace(/\D/g, "").length === 5 &&
                 !nextCity
@@ -204,7 +239,11 @@ export function HeroBanner({ categories }: HeroBannerProps) {
             }
         }
 
-        if (selectedLocation && !selectedLocation.isPublic && !typedLocation.trim()) {
+        if (
+            selectedLocation &&
+            !selectedLocation.isPublic &&
+            !typedLocation.trim()
+        ) {
             setZipError("We don't list this area yet")
             setLocationOpen(true)
             return
@@ -216,17 +255,21 @@ export function HeroBanner({ categories }: HeroBannerProps) {
         if (!nextCategory && typedCategory.trim()) {
             const exact = filteredCategories.find(
                 (item) =>
-                    item.name.toLowerCase() === typedCategory.trim().toLowerCase()
+                    item.name.toLowerCase() ===
+                    typedCategory.trim().toLowerCase()
             )
             nextCategory =
                 exact ??
-                (filteredCategories.length === 1 ? filteredCategories[0] : null)
+                (filteredCategories.length === 1
+                    ? filteredCategories[0]
+                    : null)
         }
 
         router.push(
             buildCatalogPath({
                 citySlug: nextCity,
                 categorySlugs: nextCategory?.slugs,
+                filterTokens: nextZip ? [nextZip] : undefined,
             })
         )
     }
@@ -312,7 +355,8 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                                             onClick={() => pickCategory(item)}
                                             className={cn(
                                                 "flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                                                selectedCategory?.id === item.id &&
+                                                selectedCategory?.id ===
+                                                item.id &&
                                                 "bg-accent font-medium"
                                             )}
                                         >
@@ -346,10 +390,15 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                                     setLocationQuery(e.target.value)
                                     setSelectedLocation(null)
                                     setZipError(null)
+                                    setSuggestions([])
+                                    setSuggestLoading(true)
                                     setLocationOpen(true)
                                 }}
                                 onFocus={() => {
                                     setLocationQuery("")
+                                    setSuggestions([])
+                                    setZipError(null)
+                                    setSuggestLoading(true)
                                     setLocationOpen(true)
                                 }}
                                 className="h-full w-full min-w-0 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
@@ -374,11 +423,6 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                         </div>
                         {locationOpen && (
                             <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
-                                {suggestLoading && (
-                                    <p className="px-3 py-2 text-sm text-muted-foreground">
-                                        Searching…
-                                    </p>
-                                )}
                                 {zipError && (
                                     <p className="px-3 py-2 text-sm text-destructive">
                                         {zipError}
@@ -399,7 +443,8 @@ export function HeroBanner({ categories }: HeroBannerProps) {
                                             onClick={() => pickLocation(item)}
                                             className={cn(
                                                 "flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                                                item.slug === selectedCitySlug &&
+                                                item.slug ===
+                                                selectedCitySlug &&
                                                 item.type === "city" &&
                                                 "bg-accent font-medium"
                                             )}

@@ -1,10 +1,20 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { MapPin, X } from "lucide-react"
 
 import { useSelectedCity } from "@/hooks/use-selected-city"
 import { cn } from "@/lib/utils"
+
+type LocationSuggestion = {
+    type: "city" | "zip"
+    slug: string
+    label: string
+    city: string
+    stateId: string
+    isPublic: boolean
+    zip?: string
+}
 
 type CityPickerProps = {
     className?: string
@@ -17,8 +27,9 @@ export function CityPicker({ className, onPicked }: CityPickerProps) {
 
     const [query, setQuery] = useState("")
     const [open, setOpen] = useState(false)
-    const [zipError, setZipError] = useState<string | null>(null)
-    const [zipLoading, setZipLoading] = useState(false)
+    const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const rootRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -31,96 +42,166 @@ export function CityPicker({ className, onPicked }: CityPickerProps) {
         return () => document.removeEventListener("mousedown", onPointerDown)
     }, [])
 
-    const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase()
-        if (!q) return publicCities
-        return publicCities.filter(
-            (c) =>
-                c.label.toLowerCase().includes(q) ||
-                c.slug.includes(q)
-        )
-    }, [query, publicCities])
+    useEffect(() => {
+        if (!open) return
 
-    function pick(slug: string) {
+        const q = query.trim()
+        const controller = new AbortController()
+        // Не показываем старый список во время debounce/запроса
+        const timer = window.setTimeout(() => {
+            void fetch(`/api/geo/suggest?q=${encodeURIComponent(q)}`, {
+                signal: controller.signal,
+            })
+                .then((res) => res.json())
+                .then((data: { suggestions?: LocationSuggestion[] }) => {
+                    setSuggestions(data.suggestions ?? [])
+                    setLoading(false)
+                })
+                .catch((err: unknown) => {
+                    if (
+                        err instanceof DOMException &&
+                        err.name === "AbortError"
+                    ) {
+                        return
+                    }
+                    setSuggestions([])
+                    setLoading(false)
+                })
+        }, 200)
+
+        return () => {
+            window.clearTimeout(timer)
+            controller.abort()
+        }
+    }, [open, query])
+
+    function pickCity(slug: string) {
         setCity(slug)
         setQuery("")
-        setZipError(null)
+        setError(null)
         setOpen(false)
         onPicked?.()
+    }
+
+    function pickZip(item: LocationSuggestion) {
+        if (!item.isPublic || !item.zip) {
+            setError("We don't list this area yet")
+            setOpen(true)
+            return
+        }
+        setCity(item.slug, { zip: item.zip })
+        setQuery("")
+        setError(null)
+        setOpen(false)
+        onPicked?.()
+    }
+
+    function pickSuggestion(item: LocationSuggestion) {
+        if (item.type === "zip") {
+            pickZip(item)
+            return
+        }
+        if (!item.isPublic) {
+            setError("We don't list this area yet")
+            setOpen(true)
+            return
+        }
+        pickCity(item.slug)
     }
 
     async function submit(raw: string) {
         const value = raw.trim()
         if (!value) return
 
-        const digits = value.replace(/\D/g, "")
-        if (digits.length === 5 && /^\d{5}$/.test(digits)) {
-            setZipLoading(true)
-            setZipError(null)
-            try {
-                const res = await fetch(`/api/geo/zip?zip=${digits}`)
-                const data = await res.json()
-                if (!res.ok || !data.city?.slug) {
-                    setZipError("We don't list this area yet")
-                    setOpen(true)
+        setLoading(true)
+        setError(null)
+        try {
+            const res = await fetch(
+                `/api/geo/suggest?q=${encodeURIComponent(value)}`
+            )
+            const data = (await res.json()) as {
+                suggestions?: LocationSuggestion[]
+            }
+            const list = data.suggestions ?? []
+
+            const digits = value.replace(/\D/g, "")
+            if (digits.length === 5) {
+                const exactZip = list.find(
+                    (item) => item.type === "zip" && item.zip === digits
+                )
+                if (exactZip) {
+                    pickZip(exactZip)
                     return
                 }
-                pick(data.city.slug)
-            } catch {
-                setZipError("We don't list this area yet")
+                setError("We don't list this area yet")
                 setOpen(true)
-            } finally {
-                setZipLoading(false)
+                return
             }
-            return
-        }
 
-        const match = publicCities.find(
-            (c) =>
-                c.label.toLowerCase() === value.toLowerCase() ||
-                c.slug === value.toLowerCase()
-        )
-        if (match) {
-            pick(match.slug)
-            return
-        }
+            const exactCity = list.find(
+                (item) =>
+                    item.type === "city" &&
+                    (item.label.toLowerCase() === value.toLowerCase() ||
+                        item.city.toLowerCase() === value.toLowerCase() ||
+                        item.slug === value.toLowerCase())
+            )
+            if (exactCity) {
+                pickSuggestion(exactCity)
+                return
+            }
 
-        if (filtered.length === 1) {
-            pick(filtered[0].slug)
-            return
-        }
+            if (list.length === 1) {
+                pickSuggestion(list[0])
+                return
+            }
 
-        setZipError(null)
-        setOpen(true)
+            setSuggestions(list)
+            setOpen(true)
+        } catch {
+            setError("We don't list this area yet")
+            setOpen(true)
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
-        <div ref={rootRef} className={cn("relative w-full min-w-0 sm:w-56", className)}>
+        <div
+            ref={rootRef}
+            className={cn("relative w-full min-w-0 sm:w-56", className)}
+        >
             <div className="flex h-9 items-center gap-1.5 rounded-md border bg-background px-2.5">
                 <MapPin className="size-4 shrink-0 text-muted-foreground" />
                 <input
                     type="text"
                     value={open || !selected ? query : selected.label}
-                    placeholder="Choose your city"
+                    placeholder="City or ZIP"
                     onChange={(e) => {
                         setQuery(e.target.value)
-                        setZipError(null)
+                        setError(null)
+                        setSuggestions([])
+                        setLoading(true)
                         setOpen(true)
                     }}
                     onFocus={() => {
                         setQuery("")
+                        setSuggestions([])
+                        setError(null)
+                        setLoading(true)
                         setOpen(true)
                     }}
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
                             e.preventDefault()
-                            void submit(query || (e.target as HTMLInputElement).value)
+                            void submit(
+                                query || (e.target as HTMLInputElement).value
+                            )
                         }
                         if (e.key === "Escape") setOpen(false)
                     }}
                     className="h-full w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                     autoComplete="off"
-                    aria-label="Choose your city"
+                    aria-label="City or ZIP"
                 />
                 {selected && !open && (
                     <button
@@ -128,7 +209,7 @@ export function CityPicker({ className, onPicked }: CityPickerProps) {
                         onClick={() => {
                             clearCity()
                             setQuery("")
-                            setZipError(null)
+                            setError(null)
                         }}
                         className="text-muted-foreground hover:text-foreground"
                         aria-label="Clear city"
@@ -139,32 +220,36 @@ export function CityPicker({ className, onPicked }: CityPickerProps) {
             </div>
 
             {open && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md">
-                    {zipLoading && (
-                        <p className="px-3 py-2 text-sm text-muted-foreground">
-                            Looking up ZIP…
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
+                    {error && (
+                        <p className="px-3 py-2 text-sm text-destructive">
+                            {error}
                         </p>
                     )}
-                    {zipError && (
-                        <p className="px-3 py-2 text-sm text-destructive">{zipError}</p>
-                    )}
-                    {!zipLoading && filtered.length === 0 && !zipError && (
+                    {!loading && suggestions.length === 0 && !error && (
                         <p className="px-3 py-2 text-sm text-muted-foreground">
-                            No cities found
+                            No cities or ZIPs found
                         </p>
                     )}
-                    {!zipLoading &&
-                        filtered.map((city) => (
+                    {!loading &&
+                        suggestions.map((item) => (
                             <button
-                                key={city.slug}
+                                key={`${item.type}-${item.zip ?? item.slug}`}
                                 type="button"
-                                onClick={() => pick(city.slug)}
+                                onClick={() => pickSuggestion(item)}
                                 className={cn(
-                                    "flex w-full px-3 py-2 text-left text-sm hover:bg-accent",
-                                    city.slug === citySlug && "bg-accent font-medium"
+                                    "flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-accent",
+                                    item.type === "city" &&
+                                    item.slug === citySlug &&
+                                    "bg-accent font-medium"
                                 )}
                             >
-                                {city.label}
+                                <span>{item.label}</span>
+                                {item.type === "zip" && (
+                                    <span className="text-xs text-muted-foreground">
+                                        ZIP
+                                    </span>
+                                )}
                             </button>
                         ))}
                 </div>

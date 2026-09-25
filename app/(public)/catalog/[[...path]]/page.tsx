@@ -1,32 +1,90 @@
 import type { Metadata } from "next"
 import { AppLink } from "@/components/ui/app-link"
-import { notFound } from "next/navigation"
-import {
-    getCategoryByPath,
-    getCategoryTree,
-} from "@/lib/categories"
+import { notFound, permanentRedirect } from "next/navigation"
+import { getCategoryByPath, getCategoryTree } from "@/lib/categories"
 import {
     buildCatalogPath,
+    buildCatalogPathWithoutFilter,
     type CatalogSearchParams,
 } from "@/lib/catalog-path"
 import { resolveCatalogPath } from "@/lib/catalog-path-server"
+import {
+    EMPTY_FILTERS,
+    hasActiveFilters,
+    parseFilterSegment,
+    type CatalogFilters,
+} from "@/lib/catalog-filters"
 import {
     formatServiceCityLabel,
     getPublicCityBySlug,
     getPublicCitySlugs,
 } from "@/lib/geo"
-import { CategorySidebar } from "@/components/site/catalog/category-sidebar"
+import { CatalogFilters as CatalogFiltersUI } from "@/components/site/catalog/catalog-filters"
 import {
     CatalogListing,
     CatalogListingFallback,
 } from "@/components/site/catalog/catalog-listing"
 import { Suspense } from "react"
 
-export const revalidate = 60 // TTL 3600 - 1 час
+export const revalidate = 60
 
 type PageProps = {
     params: Promise<{ path?: string[] }>
     searchParams: Promise<CatalogSearchParams>
+}
+
+/**
+ * Только парсинг для metadata (без redirect/notFound).
+ * Невалидный сегмент → как «есть фильтр» (noindex).
+ */
+function filtersForMetadata(
+    filterSegment: string | null
+): CatalogFilters {
+    if (!filterSegment) return EMPTY_FILTERS
+    const parsed = parseFilterSegment(filterSegment)
+    if (parsed.status === "ok" || parsed.status === "redirect") {
+        return parsed.filters
+    }
+    // invalid / empty — считаем «активным», чтобы не индексировать мусор
+    if (parsed.status === "invalid") {
+        return { ...EMPTY_FILTERS, tokens: ["__invalid__"] }
+    }
+    return EMPTY_FILTERS
+}
+
+/**
+ * Редиректы 301 и 404 — только из page (не из generateMetadata).
+ */
+function resolveFiltersOrRedirect(
+    filterSegment: string | null,
+    citySlug: string | null,
+    categorySlugs: string[]
+): CatalogFilters {
+    if (!filterSegment) return EMPTY_FILTERS
+
+    const parsed = parseFilterSegment(filterSegment)
+
+    if (parsed.status === "empty") {
+        permanentRedirect(
+            buildCatalogPathWithoutFilter({ citySlug, categorySlugs })
+        )
+    }
+
+    if (parsed.status === "invalid") {
+        notFound()
+    }
+
+    if (parsed.status === "redirect") {
+        permanentRedirect(
+            buildCatalogPath({
+                citySlug,
+                categorySlugs,
+                filterTokens: parsed.filters.tokens,
+            })
+        )
+    }
+
+    return parsed.filters
 }
 
 export async function generateStaticParams() {
@@ -60,6 +118,7 @@ export async function generateStaticParams() {
             }
         }
 
+        // f-* сегменты в SSG не включаем — только ISR по запросу
         return paths
     } catch (error) {
         console.error("generateStaticParams catalog error:", error)
@@ -67,9 +126,15 @@ export async function generateStaticParams() {
     }
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+                                           params,
+                                       }: PageProps): Promise<Metadata> {
     const { path } = await params
-    const { citySlug, categorySlugs } = await resolveCatalogPath(path)
+    const { citySlug, categorySlugs, filterSegment } =
+        await resolveCatalogPath(path)
+
+    const filters = filtersForMetadata(filterSegment)
+    const filtered = hasActiveFilters(filters)
 
     const [city, category] = await Promise.all([
         citySlug ? getPublicCityBySlug(citySlug) : Promise.resolve(null),
@@ -79,12 +144,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ])
 
     if (citySlug && !city) return { title: "City not found" }
-    if (categorySlugs.length > 0 && !category) return { title: "Category not found" }
+    if (categorySlugs.length > 0 && !category) {
+        return { title: "Category not found" }
+    }
 
     const location = city ? `${city.city}, ${city.stateId}` : null
+    const canonicalPath = buildCatalogPathWithoutFilter({
+        citySlug,
+        categorySlugs,
+    })
+
+    const robots = filtered
+        ? { index: false, follow: true }
+        : { index: true, follow: true }
+
+    const base: Metadata = {
+        robots,
+        alternates: { canonical: canonicalPath },
+    }
 
     if (!city && !category) {
         return {
+            ...base,
             title: "Catalog — Cleaning Companies",
             description: "Browse cleaning companies by category",
         }
@@ -92,6 +173,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     if (city && !category) {
         return {
+            ...base,
             title: `Cleaning Companies in ${location}`,
             description: `Find cleaning companies in ${location}`,
         }
@@ -99,6 +181,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     if (city && category) {
         return {
+            ...base,
             title: category.metaTitle || `${category.name} in ${location}`,
             description:
                 category.metaDescription ||
@@ -108,6 +191,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     return {
+        ...base,
         title: category!.metaTitle || `${category!.name} — Cleaning Companies`,
         description:
             category!.metaDescription ||
@@ -116,12 +200,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 }
 
-export default async function CatalogPage({ params, searchParams }: PageProps) {
+export default async function CatalogPage({
+                                              params,
+                                              searchParams,
+                                          }: PageProps) {
     const { path } = await params
-    const { citySlug, categorySlugs } = await resolveCatalogPath(path)
+    const { citySlug, categorySlugs, filterSegment } =
+        await resolveCatalogPath(path)
 
-    const [tree, city, category] = await Promise.all([
-        getCategoryTree(),
+    const filters = resolveFiltersOrRedirect(
+        filterSegment,
+        citySlug,
+        categorySlugs
+    )
+
+    const [city, category] = await Promise.all([
         citySlug ? getPublicCityBySlug(citySlug) : Promise.resolve(null),
         categorySlugs.length > 0
             ? getCategoryByPath(categorySlugs)
@@ -132,18 +225,25 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
     if (categorySlugs.length > 0 && !category) notFound()
 
     const location = city ? `${city.city}, ${city.stateId}` : null
-    const title = city && category
-        ? `${category.metaH1 || category.name} in ${location}`
-        : city
-            ? `Cleaning Companies in ${location}`
-            : category?.metaH1 || category?.name || "All Cleaning Companies"
+    const title =
+        city && category
+            ? `${category.metaH1 || category.name} in ${location}`
+            : city
+                ? `Cleaning Companies in ${location}`
+                : category?.metaH1 || category?.name || "All Cleaning Companies"
 
-    const currentSlug = category?.slug
+    const basePath = buildCatalogPathWithoutFilter({
+        citySlug: city?.slug,
+        categorySlugs,
+    })
 
     return (
         <div className="container mx-auto px-4 sm:px-6 py-8">
             <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                <AppLink href="/" className="hover:text-foreground transition-colors">
+                <AppLink
+                    href="/"
+                    className="hover:text-foreground transition-colors"
+                >
                     Home
                 </AppLink>
                 <span>/</span>
@@ -163,7 +263,10 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
                         <span>/</span>
                         {category ? (
                             <AppLink
-                                href={buildCatalogPath({ citySlug: city.slug })}
+                                href={buildCatalogPath({
+                                    citySlug: city.slug,
+                                    filterTokens: filters.tokens,
+                                })}
                                 className="hover:text-foreground transition-colors"
                             >
                                 {location}
@@ -183,7 +286,10 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
                         .map((c) => c.slug)
 
                     return (
-                        <span key={crumb.id} className="flex items-center gap-1.5">
+                        <span
+                            key={crumb.id}
+                            className="flex items-center gap-1.5"
+                        >
                             <span>/</span>
                             {isLast ? (
                                 <span className="text-foreground font-medium">
@@ -194,6 +300,7 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
                                     href={buildCatalogPath({
                                         citySlug: city?.slug,
                                         categorySlugs: crumbSlugs,
+                                        filterTokens: filters.tokens,
                                     })}
                                     className="hover:text-foreground transition-colors"
                                 >
@@ -206,7 +313,9 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
             </nav>
 
             <div className="mb-6">
-                <h1 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-5xl md:leading-[3.5rem]">{title}</h1>
+                <h1 className="text-[1.75rem] leading-9 font-bold tracking-tight md:text-5xl md:leading-[3.5rem]">
+                    {title}
+                </h1>
                 {category?.description && (
                     <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
                         {category.description}
@@ -215,10 +324,15 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8">
-                <CategorySidebar
-                    tree={tree}
-                    currentSlug={currentSlug}
-                    citySlug={city?.slug}
+                <CatalogFiltersUI
+                    activeTokens={filters.tokens}
+                    basePath={basePath}
+                    catalogCitySlug={city?.slug ?? null}
+                    catalogCityLabel={
+                        city
+                            ? formatServiceCityLabel(city.city, city.stateId)
+                            : null
+                    }
                 />
 
                 <div className="flex-1 min-w-0">
@@ -227,7 +341,15 @@ export default async function CatalogPage({ params, searchParams }: PageProps) {
                             searchParams={searchParams}
                             categoryId={category?.id ?? null}
                             cityId={city?.id ?? null}
-                            sCity={city ? formatServiceCityLabel(city.city, city.stateId) : null}
+                            sCity={
+                                city
+                                    ? formatServiceCityLabel(
+                                        city.city,
+                                        city.stateId
+                                    )
+                                    : null
+                            }
+                            filters={filters}
                         />
                     </Suspense>
                 </div>

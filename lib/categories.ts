@@ -9,9 +9,13 @@ import {
     categoryPath,
     companies,
     companyToCategory,
-    companyImages,
+    companyAttributes,
     cityZips,
 } from "@/db/schema"
+import {
+    EMPTY_FILTERS,
+    type CatalogFilters,
+} from "@/lib/catalog-filters"
 
 export type MenuCategoryChild = {
     id: number
@@ -63,7 +67,7 @@ export const getMenuCategories = unstable_cache(
     },
     ["menu-categories"],
     {
-        revalidate: 60, // TTL 3600 - 1 час
+        revalidate: 60,
         tags: ["categories"],
     }
 )
@@ -101,7 +105,6 @@ export type CategoryWithPath = {
     metaTitle: string | null
     metaDescription: string | null
     metaH1: string | null
-    // полный путь от корня до текущей (для хлебных крошек)
     breadcrumbs: { id: number; name: string; slug: string }[]
 }
 
@@ -188,7 +191,6 @@ export const getCategoryByPath = cache(
 
         if (!current) return null
 
-        // breadcrumbs через category_path
         const pathRows = await db.query.categoryPath.findMany({
             where: eq(categoryPath.categoryId, current.id),
             orderBy: [asc(categoryPath.level)],
@@ -235,6 +237,7 @@ export type CompaniesQuery = {
     /** fallback, пока city_id не проставлен */
     sCity?: string | null
     zips?: string[]
+    filters?: CatalogFilters
     sort?: CompanySort
     limit?: number
     page?: number
@@ -251,22 +254,86 @@ export type CompaniesResult = {
 const DEFAULT_LIMIT = 15
 const DEFAULT_SORT: CompanySort = "sort_order"
 
+/**
+ * SQL-фрагменты фильтров каталога.
+ * AND между группами, OR внутри (языки / оплата / owned / zips).
+ */
+function buildAttributeFilters(filters: CatalogFilters): SQL[] {
+    const parts: SQL[] = []
+
+    if (filters.insured) {
+        parts.push(eq(companies.isInsured, true))
+    }
+    if (filters.bonded) {
+        parts.push(eq(companies.isBonded, true))
+    }
+    if (filters.licensed) {
+        parts.push(eq(companies.isLicensed, true))
+    }
+
+    for (const attrId of filters.boolAttributeIds) {
+        parts.push(
+            sql`exists (
+                select 1 from ${companyAttributes} ca
+                where ca.company_id = ${companies.id}
+                  and ca.attribute_id = ${attrId}
+                  and ca.value_boolean = true
+            )`
+        )
+    }
+
+    for (const [attrIdStr, valueIds] of Object.entries(
+        filters.valueAttributeIds
+    )) {
+        if (!valueIds.length) continue
+        const attrId = Number(attrIdStr)
+        const idList = sql.join(
+            valueIds.map((id) => sql`${id}`),
+            sql`, `
+        )
+        parts.push(
+            sql`exists (
+                select 1 from ${companyAttributes} ca
+                where ca.company_id = ${companies.id}
+                  and ca.attribute_id = ${attrId}
+                  and ca.value_id in (${idList})
+            )`
+        )
+    }
+
+    return parts
+}
+
+function buildZipFilterSql(zips: string[]): SQL | undefined {
+    if (!zips.length) return undefined
+    const zipList = sql.join(
+        zips.map((zip) => sql`${zip}`),
+        sql`, `
+    )
+    return sql`exists (
+        select 1
+        from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
+        where svc.zip in (${zipList})
+    )`
+}
+
 export const getCompaniesByCategoryId = cache(
     async ({
                categoryId,
                cityId,
                sCity,
                zips,
+               filters = EMPTY_FILTERS,
                sort = DEFAULT_SORT,
                limit = DEFAULT_LIMIT,
                page = 1,
            }: CompaniesQuery): Promise<CompaniesResult> => {
-
-        const safeLimit = [15, 30, 60, 120].includes(limit) ? limit : DEFAULT_LIMIT
+        const safeLimit = [15, 30, 60, 120].includes(limit)
+            ? limit
+            : DEFAULT_LIMIT
         const safePage = Math.max(1, page)
         const offset = (safePage - 1) * safeLimit
 
-        // порядок сортировки
         const orderBy = (() => {
             switch (sort) {
                 case "name_asc":
@@ -286,43 +353,54 @@ export const getCompaniesByCategoryId = cache(
         const cityLabel = sCity?.trim() || null
         const cityLabelLower = cityLabel?.toLowerCase() ?? null
 
-        const zipList =
-            !cityId && !cityLabel && zips && zips.length > 0
+        // ZIP из path-legacy query + из f-сегмента
+        const allZips = [
+            ...new Set([...(zips ?? []), ...filters.zips]),
+        ]
+
+        const zipOnlyList =
+            !cityId && !cityLabel && allZips.length > 0
                 ? sql.join(
-                    zips.map((zip) => sql`${zip}`),
+                    allZips.map((zip) => sql`${zip}`),
                     sql`, `
                 )
                 : null
 
-        const zipFilter =
-            zipList
-                ? sql`exists (
-                    select 1
-                    from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
-                    where svc.zip in (${zipList})
-                    )`
-                : undefined
+        const zipOnlyFilter = zipOnlyList
+            ? sql`exists (
+                select 1
+                from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
+                where svc.zip in (${zipOnlyList})
+            )`
+            : undefined
 
         const cityFilter = cityId
             ? sql`(
-                    ${companies.cityId} = ${cityId}
-                    or (
-                        ${cityLabelLower}::text is not null
-                        and lower(${companies.sCity}) = ${cityLabelLower}
-                    )
-                    or exists (
-                        select 1
-                        from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
-                        inner join ${cityZips} as cz on cz.zip = svc.zip
-                        where cz.city_id = ${cityId}
-                    )
-                )`
+                ${companies.cityId} = ${cityId}
+                or (
+                    ${cityLabelLower}::text is not null
+                    and lower(${companies.sCity}) = ${cityLabelLower}
+                )
+                or exists (
+                    select 1
+                    from jsonb_array_elements_text(coalesce(${companies.sZips}, '[]'::jsonb)) as svc(zip)
+                    inner join ${cityZips} as cz on cz.zip = svc.zip
+                    where cz.city_id = ${cityId}
+                )
+            )`
             : cityLabel
                 ? sql`lower(${companies.sCity}) = ${cityLabelLower}`
-                : zipFilter
+                : zipOnlyFilter
 
-        // город выбран, но нет ни cityId, ни sCity, ни ZIP — пустая выдача
-        if (!cityId && !cityLabel && zips && zips.length === 0) {
+        // город выбран в UI, но нет cityId / sCity / ZIP — пустая выдача
+        // (только если явно передали zips: [] как «город без данных»)
+        if (
+            !cityId &&
+            !cityLabel &&
+            zips !== undefined &&
+            zips.length === 0 &&
+            filters.zips.length === 0
+        ) {
             return {
                 companies: [],
                 total: 0,
@@ -332,10 +410,20 @@ export const getCompaniesByCategoryId = cache(
             }
         }
 
+        // Доп. ZIP при уже выбранном городе — AND
+        const extraZipFilter =
+            (cityId || cityLabel) && allZips.length > 0
+                ? buildZipFilterSql(allZips)
+                : undefined
+
+        const attrFilters = buildAttributeFilters(filters)
+
         const baseWhere = and(
             eq(companies.status, true),
             eq(companies.moderationStatus, "approved"),
-            cityFilter
+            cityFilter,
+            extraZipFilter,
+            ...attrFilters
         )
 
         // --- без категории (все) ---
@@ -377,7 +465,9 @@ export const getCompaniesByCategoryId = cache(
 
         // --- с категорией (включая подкатегории) ---
         const totalResult = await db
-            .select({ count: sql<number>`count(DISTINCT ${companies.id})::int` })
+            .select({
+                count: sql<number>`count(DISTINCT ${companies.id})::int`,
+            })
             .from(companies)
             .innerJoin(
                 companyToCategory,
@@ -416,12 +506,10 @@ export const getCompaniesByCategoryId = cache(
                 eq(categoryPath.categoryId, companyToCategory.categoryId)
             )
             .where(and(eq(categoryPath.pathId, categoryId), baseWhere))
-            .orderBy(companies.id, ...orderBy) // distinctOn требует первый orderBy = distinct колонке
+            .orderBy(companies.id, ...orderBy)
             .limit(safeLimit)
             .offset(offset)
 
-        // distinctOn + нужная сортировка — после выборки сортируем в JS
-        // (для 15–120 записей это нормально)
         const sorted = [...rows].sort((a, b) => {
             switch (sort) {
                 case "name_asc":
@@ -429,7 +517,10 @@ export const getCompaniesByCategoryId = cache(
                 case "name_desc":
                     return b.name.localeCompare(a.name)
                 case "newest":
-                    return (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)
+                    return (
+                        (b.createdAt?.getTime() ?? 0) -
+                        (a.createdAt?.getTime() ?? 0)
+                    )
                 case "viewed":
                     return b.viewed - a.viewed
                 default:

@@ -2,7 +2,7 @@
 
 > Автоматически сгенерировано скриптом `scripts/generate-structure.js`
 > 
-> Последнее обновление: 2026-09-24T05:39:25.174Z
+> Последнее обновление: 2026-09-25T12:08:42.635Z
 
 ```text
 ├── actions/
@@ -117,6 +117,7 @@
 │   │   │   ├── blog-category-sidebar.tsx
 │   │   │   └── blog-toolbar.tsx
 │   │   ├── catalog/
+│   │   │   ├── catalog-filters.tsx
 │   │   │   ├── catalog-listing.tsx
 │   │   │   ├── catalog-pagination.tsx
 │   │   │   ├── catalog-toolbar.tsx
@@ -187,6 +188,7 @@
 │   ├── attributes.ts
 │   ├── auth.ts
 │   ├── blog-categories.ts
+│   ├── catalog-filters.ts
 │   ├── catalog-path-server.ts
 │   ├── catalog-path.ts
 │   ├── categories.ts

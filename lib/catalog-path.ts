@@ -1,4 +1,9 @@
 import type { CompanySort } from "@/lib/categories"
+import {
+    buildFilterSegment,
+    splitPathAndFilter,
+    type CatalogFilters,
+} from "@/lib/catalog-filters"
 
 export function parseCatalogPath(
     path: string[] | undefined,
@@ -6,18 +11,25 @@ export function parseCatalogPath(
 ): {
     citySlug: string | null
     categorySlugs: string[]
+    filterSegment: string | null
 } {
-    const slugs = path ?? []
+    const { pathWithoutFilter, filterSegment } = splitPathAndFilter(path)
+    const slugs = pathWithoutFilter
+
     if (slugs.length === 0) {
-        return { citySlug: null, categorySlugs: [] }
+        return { citySlug: null, categorySlugs: [], filterSegment }
     }
 
     const known = publicCitySlugs ? new Set(publicCitySlugs) : null
     if (known?.has(slugs[0])) {
-        return { citySlug: slugs[0], categorySlugs: slugs.slice(1) }
+        return {
+            citySlug: slugs[0],
+            categorySlugs: slugs.slice(1),
+            filterSegment,
+        }
     }
 
-    return { citySlug: null, categorySlugs: slugs }
+    return { citySlug: null, categorySlugs: slugs, filterSegment }
 }
 
 export function parseCatalogPathname(
@@ -26,12 +38,14 @@ export function parseCatalogPathname(
 ): {
     citySlug: string | null
     categorySlugs: string[]
+    filterSegment: string | null
 } {
     const parts = pathname.split("/").filter(Boolean)
     if (parts[0] !== "catalog") {
-        return { citySlug: null, categorySlugs: [] }
+        return { citySlug: null, categorySlugs: [], filterSegment: null }
     }
 
+    // legacy /catalog/filter/... — игнорируем сегмент filter
     const segs = parts[1] === "filter" ? parts.slice(2) : parts.slice(1)
     return parseCatalogPath(segs, publicCitySlugs)
 }
@@ -39,11 +53,32 @@ export function parseCatalogPathname(
 export function buildCatalogPath(opts: {
     citySlug?: string | null
     categorySlugs?: string[]
+    /** токены фильтра (без префикса f-); будут отсортированы */
+    filterTokens?: string[] | null
 }): string {
     const parts: string[] = []
     if (opts.citySlug) parts.push(opts.citySlug)
     if (opts.categorySlugs?.length) parts.push(...opts.categorySlugs)
+
+    const filterSeg = opts.filterTokens
+        ? buildFilterSegment(opts.filterTokens)
+        : null
+    if (filterSeg) parts.push(filterSeg)
+
     return parts.length ? `/catalog/${parts.join("/")}` : "/catalog"
+}
+
+/**
+ * Canonical path без фильтра (для robots / redirect target).
+ */
+export function buildCatalogPathWithoutFilter(opts: {
+    citySlug?: string | null
+    categorySlugs?: string[]
+}): string {
+    return buildCatalogPath({
+        citySlug: opts.citySlug,
+        categorySlugs: opts.categorySlugs,
+    })
 }
 
 const CATALOG_SORTS: CompanySort[] = [
@@ -90,3 +125,5 @@ export function parseCatalogSearchParams(sp: CatalogSearchParams): {
 
     return { sort, limit, page }
 }
+
+export type { CatalogFilters }

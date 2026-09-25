@@ -109,14 +109,48 @@ const BUSINESS_STRUCTURES = [
 
 const HOURS_MODES = ["weekly", "always_open", "by_appointment"] as const
 
+/**
+ * ZIP должны совпадать с city_zips после pnpm db:geo:build-cities
+ * (postal city name Orlando / Jacksonville, FL — standard delivery ZIPs).
+ * Не смешивать чужие города (Winter Park 32789, Atlantic Beach 32233 и т.п.).
+ */
 const CITIES = [
     {
         city: "Orlando",
         state: "FL",
-        zips: ["32801", "32803", "32804", "32806", "32819", "32822", "32835"],
+        zips: [
+            "32801", // Downtown
+            "32803", // Colonialtown / Thornton Park
+            "32804", // College Park
+            "32805",
+            "32806", // SoDo / Delaney Park
+            "32807", // Azalea Park
+            "32808", // Pine Hills
+            "32809", // Edgewood / Pine Castle
+            "32810", // Lockhart
+            "32811",
+            "32812", // Conway
+            "32814", // Baldwin Park
+            "32817", // University / UCF area
+            "32818",
+            "32819", // Dr. Phillips / I-Drive
+            "32820",
+            "32821",
+            "32822",
+            "32824", // Meadow Woods
+            "32825",
+            "32826",
+            "32827", // Lake Nona
+            "32828",
+            "32829",
+            "32832",
+            "32835", // MetroWest
+            "32836",
+            "32837", // Hunters Creek
+            "32839", // Millenia
+        ],
         areas: [
             "Downtown Orlando",
-            "Winter Park",
             "College Park",
             "Thornton Park",
             "Lake Nona",
@@ -125,12 +159,45 @@ const CITIES = [
             "Mills 50",
             "SoDo",
             "Conway",
+            "MetroWest",
+            "Alafaya",
+            "Pine Hills",
+            "Hunters Creek",
+            "Meadow Woods",
         ],
     },
     {
         city: "Jacksonville",
         state: "FL",
-        zips: ["32202", "32204", "32205", "32207", "32216", "32224", "32256"],
+        zips: [
+            "32202", // Downtown
+            "32204",
+            "32205", // Riverside / Avondale
+            "32206",
+            "32207", // San Marco
+            "32208",
+            "32209",
+            "32210",
+            "32211", // Arlington
+            "32216", // Southside
+            "32217",
+            "32218",
+            "32219",
+            "32220",
+            "32221",
+            "32222",
+            "32223", // Mandarin
+            "32224",
+            "32225",
+            "32226",
+            "32244",
+            "32246",
+            "32254",
+            "32256", // Southside / Baymeadows
+            "32257",
+            "32258",
+            "32277",
+        ],
         areas: [
             "Downtown Jacksonville",
             "Riverside",
@@ -139,9 +206,11 @@ const CITIES = [
             "Springfield",
             "Mandarin",
             "Southside",
-            "Jacksonville Beaches",
             "Arlington",
             "Ortega",
+            "Baymeadows",
+            "Westside",
+            "Northside",
         ],
     },
 ]
@@ -357,10 +426,16 @@ export async function seedCompanies() {
         const entityType = i % 9 === 0 ? ("individual" as const) : ("company" as const)
         const hoursMode = HOURS_MODES[i % 11 === 0 ? 1 : i % 13 === 0 ? 2 : 0]
         const structure = BUSINESS_STRUCTURES[i % BUSINESS_STRUCTURES.length]
-        const serviceZips = location.zips.slice(0, 1 + (i % location.zips.length))
-        const serviceAreas = location.areas.slice(
-            0,
-            1 + (i % location.areas.length)
+        // 5–14 случайных ZIP из пула города (не префикс массива)
+        const serviceZips = pickSome(
+            location.zips,
+            Math.min(5, location.zips.length),
+            Math.min(14, location.zips.length)
+        )
+        const serviceAreas = pickSome(
+            location.areas,
+            Math.min(2, location.areas.length),
+            Math.min(5, location.areas.length)
         )
         const pending = owned && i % 17 === 0
         const hidden = owned && i % 19 === 0
@@ -411,7 +486,8 @@ export async function seedCompanies() {
             hqAddressLine1: `${100 + (i % 900)} Main Street`,
             hqCity: location.city,
             hqState: location.state,
-            hqZip: location.zips[0],
+            // HQ ZIP — один из service area, не всегда первый в списке
+            hqZip: serviceZips[0] ?? location.zips[0],
             cityId:
                 cityIdByKey.get(`${location.city.toLowerCase()}|${location.state}`) ??
                 null,

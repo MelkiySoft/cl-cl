@@ -11,26 +11,31 @@ type CategorySidebarProps = {
     tree: CategoryNode[]
     currentSlug?: string
     citySlug?: string | null
+    /** сохраняем активные фильтры при смене категории */
+    filterTokens?: string[]
 }
 
-/**
- * Recursive component that renders a single category item and its children.
- */
 function CategoryItem({
                           node,
                           depth = 0,
                           currentSlug,
                           citySlug,
+                          filterTokens,
                           parentSlugs = [],
                       }: {
     node: CategoryNode
     depth?: number
     currentSlug?: string
     citySlug?: string | null
+    filterTokens?: string[]
     parentSlugs?: string[]
 }) {
     const categorySlugs = [...parentSlugs, node.slug]
-    const href = buildCatalogPath({ citySlug, categorySlugs })
+    const href = buildCatalogPath({
+        citySlug,
+        categorySlugs,
+        filterTokens,
+    })
     const isActive = currentSlug === node.slug
     const hasChildren = node.children.length > 0
 
@@ -61,6 +66,7 @@ function CategoryItem({
                             depth={depth + 1}
                             currentSlug={currentSlug}
                             citySlug={citySlug}
+                            filterTokens={filterTokens}
                             parentSlugs={categorySlugs}
                         />
                     ))}
@@ -70,13 +76,11 @@ function CategoryItem({
     )
 }
 
-/**
- * Sidebar that displays a hierarchical list of categories.
- */
 export function CategorySidebar({
                                     tree,
                                     currentSlug,
                                     citySlug,
+                                    filterTokens,
                                 }: CategorySidebarProps) {
     return (
         <aside className="hidden w-64 shrink-0 lg:block">
@@ -86,7 +90,7 @@ export function CategorySidebar({
                 </p>
 
                 <AppLink
-                    href={buildCatalogPath({ citySlug })}
+                    href={buildCatalogPath({ citySlug, filterTokens })}
                     className={cn(
                         "flex items-center rounded-md px-2.5 py-1.5 text-lg transition-colors",
                         !currentSlug
@@ -104,6 +108,7 @@ export function CategorySidebar({
                             node={node}
                             currentSlug={currentSlug}
                             citySlug={citySlug}
+                            filterTokens={filterTokens}
                         />
                     ))}
                 </div>
